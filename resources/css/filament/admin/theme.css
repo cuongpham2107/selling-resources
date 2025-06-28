@@ -1,0 +1,75 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/* Custom styles for Wallet Transaction Resource */
+.fi-ta-text-item-text-mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Ubuntu Mono", monospace;
+}
+
+/* Badge styling improvements */
+.fi-badge-size-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Transaction status colors */
+.fi-color-custom-deposit {
+    --c-50: 239 246 255;
+    --c-400: 96 165 250;
+    --c-600: 37 99 235;
+}
+
+.fi-color-custom-withdrawal {
+    --c-50: 254 242 242;
+    --c-400: 248 113 113;
+    --c-600: 220 38 38;
+}
+
+.fi-color-custom-transfer {
+    --c-50: 254 249 195;
+    --c-400: 250 204 21;
+    --c-600: 217 119 6;
+}
+
+/* Table styling improvements */
+.fi-ta-table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Modal content styling */
+.fi-modal-content .grid {
+    gap: 1rem;
+}
+
+.fi-modal-content dt {
+    font-weight: 500;
+    color: rgb(107 114 128);
+    font-size: 0.875rem;
+}
+
+.fi-modal-content dd {
+    margin-top: 0.25rem;
+    color: rgb(17 24 39);
+    font-size: 0.875rem;
+}
+
+/* Money formatting */
+.fi-ta-text-item-money {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* VNPay specific styling */
+.vnpay-success {
+    background-color: rgb(220 252 231);
+    color: rgb(22 101 52);
+}
+
+.vnpay-failed {
+    background-color: rgb(254 242 242);
+    color: rgb(153 27 27);
+}
