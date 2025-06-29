@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from '@inertiajs/react';
 import { Bell, User, Wallet, Settings, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { formatVND } from '@/lib/currency';
 
 export function CustomerNavbar() {
     const { customer, isAuthenticated, logout } = useCustomerAuth();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { mobileMenuOpen, toggleMobileMenu } = useSidebar();
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -25,7 +26,7 @@ export function CustomerNavbar() {
                     <div className="flex items-center">
                         <button
                             className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            onClick={toggleMobileMenu}
                         >
                             {mobileMenuOpen ? (
                                 <X className="h-6 w-6" />
@@ -55,6 +56,12 @@ export function CustomerNavbar() {
                             Trang chủ
                         </Link>
                         <Link 
+                            href="/customer/marketplace" 
+                            className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                        >
+                            Chợ 
+                        </Link>
+                        <Link 
                             href="/customer/transactions" 
                             className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                         >
@@ -64,10 +71,10 @@ export function CustomerNavbar() {
                             href="/customer/store" 
                             className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                         >
-                            Cửa hàng
+                            Cửa hàng của tôi
                         </Link>
                         <Link 
-                            href="/customer/chat" 
+                            href="/customer/chat/general" 
                             className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                         >
                             Chat tổng
@@ -160,57 +167,6 @@ export function CustomerNavbar() {
                     </div>
                 </div>
             </div>
-
-            {/* Mobile menu */}
-            {mobileMenuOpen && (
-                <div className="lg:hidden">
-                    <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
-                        <Link 
-                            href="/customer/dashboard"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                            Trang chủ
-                        </Link>
-                        <Link 
-                            href="/customer/transactions"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                            Giao dịch
-                        </Link>
-                        <Link 
-                            href="/customer/store"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                            Cửa hàng
-                        </Link>
-                        <Link 
-                            href="/customer/chat"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                            Chat tổng
-                        </Link>
-                        
-                        {isAuthenticated && customer && (
-                            <div className="pt-4 border-t border-gray-200">
-                                <div className="flex items-center justify-between px-3 py-2">
-                                    <div className="flex items-center space-x-2">
-                                        <Wallet className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-medium text-green-600">
-                                            {formatVND(customer.balance?.balance || 0)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-yellow-600 font-bold">C</span>
-                                        <span className="text-sm font-medium text-yellow-600">
-                                            {customer.points?.points || 0}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </nav>
     );
 }

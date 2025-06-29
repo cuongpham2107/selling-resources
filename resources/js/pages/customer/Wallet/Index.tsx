@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date';
 import { Wallet, Plus, Send, Download, History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import type { CustomerBalance, IntermediateTransaction } from '@/types';
+import { formatVND } from '@/lib/currency';
 
 interface TransactionWithFee extends IntermediateTransaction {
     type: 'deposit' | 'withdrawal' | 'transfer_in' | 'transfer_out' | 'fee' | 'refund';
@@ -33,12 +34,7 @@ interface Props {
 }
 
 export default function WalletIndex({ balance, recentTransactions }: Props) {
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', { 
-            style: 'currency', 
-            currency: 'VND' 
-        }).format(amount);
-    };
+   
 
     const getTransactionIcon = (type: string) => {
         switch (type) {
@@ -70,7 +66,7 @@ export default function WalletIndex({ balance, recentTransactions }: Props) {
         <CustomerLayout>
             <Head title="Ví của tôi" />
             
-            <div className="space-y-6">
+            <div className="mx-auto max-w-4xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
@@ -90,32 +86,35 @@ export default function WalletIndex({ balance, recentTransactions }: Props) {
                 </div>
 
                 {/* Balance Card */}
-                <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Wallet className="h-6 w-6" />
-                            Số dư hiện tại
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div>
-                                <div className="text-3xl font-bold">
-                                    {balance ? formatCurrency(balance.balance) : formatCurrency(0)}
+                <Card className="overflow-hidden p-0">
+                    <div className="bg-gradient-to-r from-blue-400 to-purple-600 p-6 text-white">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-white/20 p-2 rounded-full">
+                                    <Wallet className="h-5 w-5" />
                                 </div>
-                                <div className="text-blue-100">Số dư khả dụng</div>
+                                <h3 className="font-bold text-xl">Số dư hiện tại</h3>
                             </div>
-                            
+                            <Badge variant="outline" className="bg-white/20 hover:bg-white/30 text-white border-none">
+                                Ví điện tử
+                            </Badge>
+                        </div>
+                        
+                        <div className="mt-6">
+                            <div className='flex justify-between items-center'>
+                                  <p className="text-white text-md font-bold mb-1">Số dư khả dụng</p>
+                                    <h2 className="text-4xl font-bold tracking-tight mb-6">
+                                        {balance ? formatVND(balance.balance) : formatVND(0)}
+                                    </h2>
+                            </div>
                             {balance && balance.locked_balance > 0 && (
-                                <div>
-                                    <div className="text-xl font-semibold">
-                                        {formatCurrency(balance.locked_balance)}
-                                    </div>
-                                    <div className="text-blue-100">Số dư bị khóa</div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-white text-sm">Số dư bị khóa</span>
+                                    <span className="font-semibold underline text-red-400">{formatVND(balance.locked_balance)}</span>
                                 </div>
                             )}
                         </div>
-                    </CardContent>
+                    </div>
                 </Card>
 
                 {/* Quick Actions */}
@@ -186,7 +185,7 @@ export default function WalletIndex({ balance, recentTransactions }: Props) {
                                         <div className="text-right">
                                             <div className={`font-semibold ${getTransactionColor(transaction.type)}`}>
                                                 {transaction.type.includes('out') || transaction.type === 'withdrawal' ? '-' : '+'}
-                                                {formatCurrency(transaction.amount)}
+                                                {formatVND(transaction.amount)}
                                             </div>
                                             <Badge 
                                                 variant={transaction.status === 'completed' ? 'default' : 'secondary'}

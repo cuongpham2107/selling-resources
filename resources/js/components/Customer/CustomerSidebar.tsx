@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { 
     Home, 
@@ -11,9 +11,11 @@ import {
     AlertTriangle,
     TrendingUp,
     Users,
-    Package
+    Package,
+    X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { Customer } from '@/types';
 
 interface CustomerSidebarProps {
@@ -29,12 +31,45 @@ interface SidebarItem {
 
 export function CustomerSidebar({ customer }: CustomerSidebarProps) {
     const { url } = usePage();
+    const { mobileMenuOpen, setMobileMenuOpen } = useSidebar();
+
+    // Close mobile menu when clicking on a link
+    const handleLinkClick = () => {
+        if (window.innerWidth < 1024) { // lg breakpoint
+            setMobileMenuOpen(false);
+        }
+    };
+
+    // Close mobile menu when clicking outside (on mobile)
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (mobileMenuOpen && window.innerWidth < 1024) {
+                const sidebar = document.getElementById('mobile-sidebar');
+                const navbar = document.querySelector('nav');
+                
+                if (sidebar && !sidebar.contains(event.target as Node) && 
+                    navbar && !navbar.contains(event.target as Node)) {
+                    setMobileMenuOpen(false);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [mobileMenuOpen, setMobileMenuOpen]);
 
     const sidebarItems: SidebarItem[] = [
         {
             title: 'Trang chủ',
             href: '/customer/dashboard',
             icon: Home,
+        },
+        {
+            title: 'Chợ',
+            href: '/customer/marketplace',
+            icon: Store,
         },
         {
             title: 'Giao dịch trung gian',
@@ -102,7 +137,33 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
     }
 
     return (
-        <aside className="fixed left-0 top-16 z-40 w-64 h-[calc(100vh-4rem)] overflow-y-auto bg-white border-r border-gray-200">
+        <>
+            {/* Mobile Overlay */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 z-30 bg-gray-600 bg-opacity-50 lg:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+            
+            {/* Sidebar */}
+            <aside 
+                id="mobile-sidebar"
+                className={cn(
+                    "fixed left-0 top-16 z-40 w-64 h-[calc(100vh-4rem)] overflow-y-auto bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out",
+                    "lg:translate-x-0", // Always visible on desktop
+                    mobileMenuOpen ? "translate-x-0" : "-translate-x-full" // Hidden/visible on mobile
+                )}
+            >
+                {/* Close button for mobile */}
+                <div className="lg:hidden flex justify-end p-4 border-b border-gray-200">
+                    <button
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
             <div className="p-4">
                 {/* Customer Info */}
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
@@ -160,6 +221,7 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={handleLinkClick}
                                 className={cn(
                                     'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
                                     active
@@ -193,12 +255,14 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
                         <Link
                             href="/customer/transactions/create"
                             className="block w-full px-3 py-2 text-sm text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                            onClick={handleLinkClick}
                         >
                             Tạo giao dịch
                         </Link>
                         <Link
                             href="/customer/products/create"
                             className="block w-full px-3 py-2 text-sm text-center text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                            onClick={handleLinkClick}
                         >
                             Đăng sản phẩm
                         </Link>
@@ -206,5 +270,6 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
                 </div>
             </div>
         </aside>
+        </>
     );
 }

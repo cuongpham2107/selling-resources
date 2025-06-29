@@ -3,14 +3,11 @@ import { Link } from '@inertiajs/react';
 import { 
     ArrowRightLeft, 
     Store, 
-    Wallet, 
     Users, 
     AlertTriangle,
     Eye,
-    Plus,
     DollarSign,
     ShoppingBag,
-    MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +17,7 @@ import CustomerLayout from '@/layouts/CustomerLayout';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { formatVND, formatPoints } from '@/lib/currency';
 import { formatDateTime, getRelativeTime } from '@/lib/date';
-import { getTransactionStatusColor, getTransactionStatusText } from '@/lib/utils';
+import { getStatusLabel, getTransactionStatusColor } from '@/lib/utils';
 import { CustomerStats, IntermediateTransaction, StoreTransaction, Notification } from '@/types';
 
 interface DashboardPageProps {
@@ -37,37 +34,6 @@ export default function CustomerDashboard({
     notifications = []
 }: DashboardPageProps) {
     const { customer } = useCustomerAuth();
-
-    const quickActions = [
-        {
-            title: 'Tạo giao dịch',
-            description: 'Tạo giao dịch trung gian mới',
-            icon: ArrowRightLeft,
-            href: '/customer/transactions/create',
-            color: 'bg-blue-600 hover:bg-blue-700',
-        },
-        {
-            title: 'Đăng sản phẩm',
-            description: 'Thêm sản phẩm vào cửa hàng',
-            icon: Plus,
-            href: '/customer/products/create',
-            color: 'bg-green-600 hover:bg-green-700',
-        },
-        {
-            title: 'Nạp tiền',
-            description: 'Nạp tiền vào ví',
-            icon: Wallet,
-            href: '/customer/wallet/deposit',
-            color: 'bg-purple-600 hover:bg-purple-700',
-        },
-        {
-            title: 'Chat tổng',
-            description: 'Tham gia chat cộng đồng',
-            icon: MessageSquare,
-            href: '/customer/chat/general',
-            color: 'bg-orange-600 hover:bg-orange-700',
-        },
-    ];
 
     const progressData = [
         {
@@ -175,7 +141,7 @@ export default function CustomerDashboard({
                 </div>
 
                 {/* Quick Actions */}
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle>Thao tác nhanh</CardTitle>
                     </CardHeader>
@@ -204,7 +170,7 @@ export default function CustomerDashboard({
                             })}
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Progress & Performance */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -297,7 +263,7 @@ export default function CustomerDashboard({
                                         </div>
                                         <div className="flex flex-col items-end ml-4">
                                             <Badge className={getTransactionStatusColor(transaction.status)}>
-                                                {getTransactionStatusText(transaction.status)}
+                                                {getStatusLabel(transaction.status)}
                                             </Badge>
                                             <p className="text-sm font-medium mt-1">
                                                 {formatVND(transaction.amount)}
@@ -341,7 +307,7 @@ export default function CustomerDashboard({
                                         </div>
                                         <div className="flex flex-col items-end ml-4">
                                             <Badge className={getTransactionStatusColor(transaction.status)}>
-                                                {getTransactionStatusText(transaction.status)}
+                                                {getStatusLabel(transaction.status)}
                                             </Badge>
                                             <p className="text-sm font-medium mt-1">
                                                 {formatVND(transaction.amount)}

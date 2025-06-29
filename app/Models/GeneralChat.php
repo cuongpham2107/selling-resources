@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GeneralChat extends Model
 {
@@ -34,18 +35,6 @@ class GeneralChat extends Model
     }
 
     /**
-     * Get the store product attached to this chat message
-     * 
-     * Lấy sản phẩm cửa hàng được đính kèm trong tin nhắn chat này
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function attachedProduct(): BelongsTo
-    {
-        return $this->belongsTo(StoreProduct::class, 'attached_product_id');
-    }
-
-    /**
      * Get the user who deleted this chat message
      * 
      * Lấy thông tin người dùng đã xóa tin nhắn chat này
@@ -58,15 +47,27 @@ class GeneralChat extends Model
     }
 
     /**
-     * Check if this chat message has an attached product
+     * Get the attached product for this general chat message
      * 
-     * Kiểm tra xem tin nhắn chat này có sản phẩm đính kèm hay không
+     * Lấy thông tin sản phẩm đính kèm cho tin nhắn chat tổng này
      * 
-     * @return bool True nếu có sản phẩm đính kèm
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function hasAttachedProduct(): bool
+    public function attachedProduct(): BelongsTo
     {
-        return !is_null($this->attached_product_id);
+        return $this->belongsTo(StoreProduct::class, 'attached_product_id');
+    }
+
+    /**
+     * Get all reports for this general chat message
+     * 
+     * Lấy tất cả báo cáo cho tin nhắn chat tổng này
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(ReportGeneralChat::class, 'general_chat_id');
     }
 
     /**
@@ -138,5 +139,55 @@ class GeneralChat extends Model
     public function scopeNotDeleted($query)
     {
         return $query->where('is_deleted', false);
+    }
+
+    /**
+     * Check if this message has been reported by a specific customer
+     * 
+     * Kiểm tra xem tin nhắn này đã được báo cáo bởi khách hàng cụ thể hay chưa
+     * 
+     * @param Customer $customer
+     * @return bool
+     */
+    public function isReportedBy(Customer $customer): bool
+    {
+        return $this->reports()->where('reporter_id', $customer->id)->exists();
+    }
+
+    /**
+     * Get the number of reports for this message
+     * 
+     * Lấy số lượng báo cáo cho tin nhắn này
+     * 
+     * @return int
+     */
+    public function getReportsCount(): int
+    {
+        return $this->reports()->count();
+    }
+
+    /**
+     * Get pending reports count for this message
+     * 
+     * Lấy số lượng báo cáo đang chờ xử lý cho tin nhắn này
+     * 
+     * @return int
+     */
+    public function getPendingReportsCount(): int
+    {
+        return $this->reports()->pending()->count();
+    }
+
+    /**
+     * Check if this message should be auto-hidden based on reports
+     * 
+     * Kiểm tra xem tin nhắn này có nên tự động ẩn dựa trên số lượng báo cáo không
+     * 
+     * @return bool
+     */
+    public function shouldAutoHide(): bool
+    {
+        $threshold = SystemSetting::getValue('general_chat_auto_hide_threshold', 3);
+        return $this->getPendingReportsCount() >= $threshold;
     }
 }

@@ -117,7 +117,7 @@ class TransactionController extends BaseCustomerController
         // Check balance if customer is buyer
         if ($request->role === 'BUYER') {
             $totalRequired = $request->amount + $fee;
-            if (!$this->hasBalance($totalRequired)) {
+            if ($this->customer->balance->available_balance < $totalRequired) {
                 return back()->withErrors(['amount' => 'Số dư không đủ để thực hiện giao dịch này']);
             }
         }
@@ -167,11 +167,11 @@ class TransactionController extends BaseCustomerController
      */
     public function update(Request $request, IntermediateTransaction $transaction): RedirectResponse
     {
+       
         // Check if customer is part of this transaction
         if ($transaction->buyer_id !== $this->customer->id && $transaction->seller_id !== $this->customer->id) {
             abort(403, 'Bạn không có quyền cập nhật giao dịch này');
         }
-
         $action = $request->input('action');
 
         switch ($action) {
@@ -233,8 +233,14 @@ class TransactionController extends BaseCustomerController
         if ($transaction->seller_id !== $customer->id) {
             return back()->withErrors(['permission' => 'Chỉ người bán mới có thể đánh dấu đã gửi hàng']);
         }
-
-        $transaction->update(['seller_sent_at' => now()]);
+            
+        $transaction->update(
+            [
+                'seller_sent_at' => now(),
+                'status' => IntermediateTransactionStatus::SELLER_SENT
+            ]
+        );
+        
         
         return back()->with('success', 'Đã đánh dấu đã gửi hàng');
     }
@@ -306,8 +312,8 @@ class TransactionController extends BaseCustomerController
             $transaction->update(['status' => IntermediateTransactionStatus::CANCELLED]);
 
             // Refund money to buyer if money was held
-            if ($transaction->buyer->balance->pending_amount >= $transaction->amount + $transaction->fee) {
-                $transaction->buyer->balance->decrement('pending_amount', $transaction->amount + $transaction->fee);
+            if ($transaction->buyer->balance->locked_balance >= $transaction->amount + $transaction->fee) {
+                $transaction->buyer->balance->decrement('locked_balance', $transaction->amount + $transaction->fee);
                 $transaction->buyer->balance->increment('balance', $transaction->amount + $transaction->fee);
             }
         });

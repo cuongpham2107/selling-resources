@@ -127,27 +127,16 @@ export interface StoreProduct {
 export interface IntermediateTransaction {
     id: number;
     transaction_code?: string;
-    // Marketplace transaction fields
-    buyer_id?: number;
-    seller_id?: number;
-    // Wallet transaction fields
-    customer_id?: number;
-    type?: 'deposit' | 'withdrawal' | 'transfer_in' | 'transfer_out' | 'fee' | 'refund';
-    payment_method?: string;
-    withdrawal_info?: {
-        bank_name: string;
-        account_number: string;
-        account_holder: string;
-    };
-    recipient_id?: number;
-    sender_id?: number;
+    // Intermediate transaction fields
+    buyer_id: number;
+    seller_id: number;
     // Common fields
     amount: number;
     fee: number;
     description: string;
     status: 'pending' | 'confirmed' | 'seller_sent' | 'buyer_received' | 'completed' | 'disputed' | 'cancelled' | 'expired';
-    duration_hours?: number;
-    expires_at?: string;
+    duration_hours: number;
+    expires_at: string;
     confirmed_at?: string;
     seller_sent_at?: string;
     buyer_received_at?: string;
@@ -155,11 +144,8 @@ export interface IntermediateTransaction {
     created_at: string;
     updated_at: string;
     // Relationships
-    customer?: Customer;
     buyer?: Customer;
     seller?: Customer;
-    recipient?: Customer;
-    sender?: Customer;
     dispute?: Dispute;
     chat?: TransactionChat[];
     transactionFee?: {
@@ -185,6 +171,7 @@ export interface StoreTransaction {
     buyer?: Customer;
     seller?: Customer;
     product?: StoreProduct;
+    dispute?: Dispute;
 }
 
 export interface Dispute {
@@ -225,6 +212,12 @@ export interface TransactionChat {
     sender_id: number;
     message: string;
     images?: string[];
+    files?: Array<{
+        name: string;
+        url: string;
+        size?: number;
+        type?: string;
+    }>;
     created_at: string;
     updated_at: string;
     transaction?: IntermediateTransaction;

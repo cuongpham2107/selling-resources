@@ -36,13 +36,6 @@ class GeneralChatForm
                     ])
                     ->columnSpan(1),
 
-                Select::make('attached_product_id')
-                    ->label('Sản phẩm đính kèm')
-                    ->relationship('attachedProduct', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->columnSpan(1),
-
                 RichEditor::make('message')
                     ->label('Nội dung tin nhắn')
                     ->required()

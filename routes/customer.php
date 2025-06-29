@@ -2,14 +2,17 @@
 
 use App\Http\Controllers\Customer\Auth\AuthenticatedCustomerController;
 use App\Http\Controllers\Customer\Auth\RegisteredCustomerController;
-use App\Http\Controllers\Customer\ChatController;
+use App\Http\Controllers\Customer\GeneralChatController;
+use App\Http\Controllers\Customer\TransactionChatController;
 use App\Http\Controllers\Customer\DashboardController;
 use App\Http\Controllers\Customer\DisputeController;
+use App\Http\Controllers\Customer\MarketplaceController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\PointController;
 use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReferralController;
+use App\Http\Controllers\Customer\ReportGeneralChatController;
 use App\Http\Controllers\Customer\SettingsController;
 use App\Http\Controllers\Customer\StoreController;
 use App\Http\Controllers\Customer\TransactionController;
@@ -56,7 +59,14 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
         Route::get('{store}/analytics', [StoreController::class, 'analytics'])->name('analytics');
     });
 
-    // Products routes
+    // Marketplace routes
+    Route::prefix('marketplace')->name('marketplace.')->group(function () {
+        Route::get('/', [MarketplaceController::class, 'index'])->name('index');
+        Route::get('product/{product}', [MarketplaceController::class, 'show'])->name('product.show');
+        Route::get('store/{store}', [MarketplaceController::class, 'store'])->name('store.show');
+    });
+
+    // Products routes (user's own products)
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::get('create', [ProductController::class, 'create'])->name('create');
@@ -69,17 +79,33 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
 
     // Chat routes
     Route::prefix('chat')->name('chat.')->group(function () {
-        Route::get('/', [ChatController::class, 'index'])->name('index');
-        Route::get('general', [ChatController::class, 'general'])->name('general');
-        Route::post('general', [ChatController::class, 'createGeneral'])->name('general.create');
-        Route::get('transaction', [ChatController::class, 'transaction'])->name('transaction');
-        Route::get('transaction/{transaction}', [ChatController::class, 'showTransaction'])->name('transaction.show');
-        Route::post('transaction/{transaction}', [ChatController::class, 'sendTransactionMessage'])->name('transaction.send');
-        Route::get('transaction/{transaction}/detail', [ChatController::class, 'transactionDetail'])->name('transaction.detail');
-        Route::post('transaction/{transaction}/detail', [ChatController::class, 'sendTransactionDetailMessage'])->name('transaction.detail.send');
-        Route::get('rules', [ChatController::class, 'rules'])->name('rules');
-        Route::post('block', [ChatController::class, 'block'])->name('block');
-        Route::post('report', [ChatController::class, 'report'])->name('report');
+        // General Chat routes
+        Route::prefix('general')->name('general.')->group(function () {
+            Route::get('/', [GeneralChatController::class, 'index'])->name('index');
+            Route::get('room', [GeneralChatController::class, 'show'])->name('show');
+            Route::post('/', [GeneralChatController::class, 'store'])->name('store');
+            Route::get('rules', [GeneralChatController::class, 'rules'])->name('rules');
+            Route::post('block', [GeneralChatController::class, 'block'])->name('block');
+            Route::post('report', [GeneralChatController::class, 'report'])->name('report');
+        });
+
+        // Transaction Chat routes
+        Route::prefix('transaction')->name('transaction.')->group(function () {
+            Route::get('/', [TransactionChatController::class, 'index'])->name('index');
+            
+            // Intermediate transaction chat routes
+            Route::get('intermediate/{transaction}', [TransactionChatController::class, 'showIntermediateTransaction'])->name('intermediate.show');
+            Route::post('intermediate/{transaction}', [TransactionChatController::class, 'sendIntermediateTransactionMessage'])->name('intermediate.send');
+            
+            // Store transaction chat routes  
+            Route::get('store/{transaction}', [TransactionChatController::class, 'showStoreTransaction'])->name('store.show');
+            Route::post('store/{transaction}', [TransactionChatController::class, 'sendStoreTransactionMessage'])->name('store.send');
+        });
+    });
+
+    // Report routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::post('/', [ReportGeneralChatController::class, 'store'])->name('store');
     });
 
     // Wallet & Points routes

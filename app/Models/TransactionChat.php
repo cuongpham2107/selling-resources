@@ -13,10 +13,12 @@ class TransactionChat extends Model
         'sender_id',
         'message',
         'images',
+        'files',
     ];
 
     protected $casts = [
         'images' => 'array',
+        'files' => 'array',
     ];
 
     // Relationships
@@ -27,9 +29,14 @@ class TransactionChat extends Model
 
     public function transaction()
     {
-        return $this->transaction_type === 'intermediate' 
-            ? $this->belongsTo(IntermediateTransaction::class, 'transaction_id')
-            : $this->belongsTo(StoreTransaction::class, 'transaction_id');
+        switch ($this->transaction_type) {
+            case 'intermediate':
+                return $this->belongsTo(IntermediateTransaction::class, 'transaction_id');
+            case 'store':
+                return $this->belongsTo(StoreTransaction::class, 'transaction_id');
+            default:
+                return $this->belongsTo(IntermediateTransaction::class, 'transaction_id');
+        }
     }
 
     // Helper methods
@@ -41,6 +48,26 @@ class TransactionChat extends Model
     public function getImageCount(): int
     {
         return count($this->images ?? []);
+    }
+
+    public function hasFiles(): bool
+    {
+        return !empty($this->files);
+    }
+
+    public function getFileCount(): int
+    {
+        return count($this->files ?? []);
+    }
+
+    public function hasAttachments(): bool
+    {
+        return $this->hasImages() || $this->hasFiles();
+    }
+
+    public function getTotalAttachmentCount(): int
+    {
+        return $this->getImageCount() + $this->getFileCount();
     }
 
     public function canSendImages(Customer $customer): bool
@@ -58,5 +85,27 @@ class TransactionChat extends Model
             });
 
         return $todayImageCount < $dailyLimit;
+    }
+
+    public function canSendFiles(Customer $customer): bool
+    {
+        // Kiểm tra giới hạn 5 file/người/ngày/giao dịch
+        $dailyLimit = SystemSetting::getValue('transaction_chat_daily_file_limit', 5);
+        
+        $todayFileCount = static::where('transaction_id', $this->transaction_id)
+            ->where('transaction_type', $this->transaction_type)
+            ->where('sender_id', $customer->id)
+            ->whereDate('created_at', today())
+            ->get()
+            ->sum(function ($chat) {
+                return count($chat->files ?? []);
+            });
+
+        return $todayFileCount < $dailyLimit;
+    }
+
+    public function canSendAttachments(Customer $customer): bool
+    {
+        return $this->canSendImages($customer) || $this->canSendFiles($customer);
     }
 }

@@ -65,15 +65,19 @@ class DailyChatLimit extends Model
     {
         $hourlyLimit = SystemSetting::getValue('general_chat_hourly_limit', 1);
         $dailyLimit = SystemSetting::getValue('general_chat_daily_limit', 3);
-
-        // Kiểm tra giới hạn theo giờ
-        $lastChatTime = $this->last_general_chat_at;
-        if ($lastChatTime && $lastChatTime->diffInHours(now()) < 1) {
+       
+        // Kiểm tra giới hạn theo ngày trước
+        if ($this->general_chat_count >= $dailyLimit) {
             return false;
         }
-
-        // Kiểm tra giới hạn theo ngày
-        return $this->general_chat_count < $dailyLimit;
+        
+        // Kiểm tra giới hạn theo giờ (nếu có tin nhắn trước đó)
+        $lastChatTime = $this->last_general_chat_at;
+        if ($lastChatTime && $lastChatTime->diffInMinutes(now()) < 60) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**

@@ -11,7 +11,6 @@ class IntermediateTransaction extends Model
 {
     protected $fillable = [
         'transaction_code',
-        'customer_id',
         'buyer_id',
         'seller_id',
         'description',
@@ -19,11 +18,6 @@ class IntermediateTransaction extends Model
         'fee',
         'duration_hours',
         'status',
-        'type',
-        'payment_method',
-        'withdrawal_info',
-        'recipient_id',
-        'sender_id',
         'confirmed_at',
         'seller_sent_at',
         'buyer_received_at',
@@ -35,7 +29,6 @@ class IntermediateTransaction extends Model
         'amount' => 'decimal:2',
         'fee' => 'decimal:2',
         'status' => IntermediateTransactionStatus::class,
-        'withdrawal_info' => 'array',
         'confirmed_at' => 'datetime',
         'seller_sent_at' => 'datetime',
         'buyer_received_at' => 'datetime',
@@ -65,21 +58,6 @@ class IntermediateTransaction extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'seller_id');
-    }
-
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class, 'customer_id');
-    }
-
-    public function recipient(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class, 'recipient_id');
-    }
-
-    public function sender(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class, 'sender_id');
     }
 
     public function chats(): HasMany

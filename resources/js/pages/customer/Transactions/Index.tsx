@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { ArrowRightLeft, Plus, Search, Filter, Eye, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowRightLeft, Plus, Search, Filter, Eye, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +12,7 @@ import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { formatVND } from '@/lib/currency';
 import { formatDate } from '@/lib/date';
 import { IntermediateTransaction } from '@/types';
+import { getStatusBadge } from '@/lib/config';
 
 interface TransactionsIndexPageProps {
     transactions: {
@@ -28,33 +29,7 @@ interface TransactionsIndexPageProps {
     };
 }
 
-const statusConfig = {
-    pending: { 
-        label: 'Chờ xác nhận', 
-        color: 'orange', 
-        icon: Clock 
-    },
-    confirmed: { 
-        label: 'Đang thực hiện', 
-        color: 'blue', 
-        icon: ArrowRightLeft 
-    },
-    completed: { 
-        label: 'Hoàn thành', 
-        color: 'green', 
-        icon: CheckCircle 
-    },
-    cancelled: { 
-        label: 'Đã hủy', 
-        color: 'red', 
-        icon: XCircle 
-    },
-    disputed: { 
-        label: 'Tranh chấp', 
-        color: 'yellow', 
-        icon: AlertTriangle 
-    },
-};
+
 
 export default function TransactionsIndex({ transactions, filters = {} }: TransactionsIndexPageProps) {
     const { customer } = useCustomerAuth();
@@ -69,20 +44,6 @@ export default function TransactionsIndex({ transactions, filters = {} }: Transa
         if (roleFilter) searchParams.set('role', roleFilter);
         
         window.location.href = `/customer/transactions?${searchParams.toString()}`;
-    };
-
-    const getStatusBadge = (status: string) => {
-        console.log('getStatusBadge called with status:', status);
-        const config = statusConfig[status as keyof typeof statusConfig];
-        if (!config) return null;
-        
-        const Icon = config.icon;
-        return (
-            <Badge variant="outline" className={`border-${config.color}-200 text-${config.color}-700 bg-${config.color}-50`}>
-                <Icon className="w-3 h-3 mr-1" />
-                {config.label}
-            </Badge>
-        );
     };
 
     return (

@@ -53,9 +53,19 @@ class TransactionChatForm
                             ->label('Hình ảnh đính kèm')
                             ->multiple()
                             ->image()
-                            ->directory('transaction-chat-images')
-                            ->maxSize(5120) // 5MB
+                            ->directory('chat/images')
+                            ->maxSize(2048) // 2MB để phù hợp với validation trong controller
                             ->maxFiles(5)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/gif'])
+                            ->columnSpanFull(),
+
+                        FileUpload::make('files')
+                            ->label('Tệp đính kèm')
+                            ->multiple()
+                            ->directory('chat/files')
+                            ->maxSize(5120) // 5MB để phù hợp với validation trong controller
+                            ->maxFiles(3)
+                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/zip', 'application/x-rar-compressed'])
                             ->columnSpanFull(),
                     ]),
             ]);

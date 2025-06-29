@@ -34,6 +34,14 @@ class StoreProduct extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'seller_id',
+    ];
+
+    public function getSellerIdAttribute(): int
+    {
+        return $this->store->owner_id ?? 0;
+    }
     // Relationships
     public function store(): BelongsTo
     {
@@ -48,11 +56,6 @@ class StoreProduct extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(StoreTransaction::class, 'product_id');
-    }
-
-    public function generalChats(): HasMany
-    {
-        return $this->hasMany(GeneralChat::class, 'attached_product_id');
     }
 
     // Helper methods
@@ -104,4 +107,6 @@ class StoreProduct extends Model
             $q->where('is_active', true)->where('is_locked', false);
         });
     }
+
+
 }

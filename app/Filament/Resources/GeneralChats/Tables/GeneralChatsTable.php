@@ -80,12 +80,6 @@ class GeneralChatsTable
                     ->searchable()
                     ->preload(),
 
-                SelectFilter::make('attached_product_id')
-                    ->label('Sản phẩm')
-                    ->relationship('attachedProduct', 'name')
-                    ->searchable()
-                    ->preload(),
-
                 TernaryFilter::make('is_deleted')
                     ->label('Trạng thái')
                     ->trueLabel('Đã xóa')

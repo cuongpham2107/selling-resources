@@ -251,6 +251,18 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Get all general chat reports made by this customer
+     * 
+     * Lấy tất cả báo cáo chat tổng do khách hàng này tạo
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function generalChatReports(): HasMany
+    {
+        return $this->hasMany(ReportGeneralChat::class, 'reporter_id');
+    }
+
+    /**
      * Generate a unique referral code for the customer
      * 
      * Tạo mã giới thiệu duy nhất cho khách hàng

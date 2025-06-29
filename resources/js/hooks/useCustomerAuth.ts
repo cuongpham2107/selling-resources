@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import { Customer } from '@/types';
 
 interface PageProps extends Record<string, unknown> {
@@ -21,8 +21,8 @@ export function useCustomerAuth() {
     };
 
     const logout = () => {
-        // Redirect to logout endpoint
-        window.location.href = '/customer/logout';
+        // Use Inertia router to make a POST request to logout
+        router.post('/customer/logout');
     };
 
     const updateCustomer = (updatedData: Partial<Customer>) => {

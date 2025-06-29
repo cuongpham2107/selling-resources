@@ -91,9 +91,9 @@ export default function Transfer({ balance }: Props) {
 
             <div className="space-y-6">
                 {/* Header */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-start space-y-4">
                     <Link href={route('customer.wallet.index')}>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="outline" size="sm">
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Quay lại
                         </Button>

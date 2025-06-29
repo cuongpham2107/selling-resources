@@ -29,22 +29,7 @@ export function getTransactionStatusColor(status: string): string {
     return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
 }
 
-/**
- * Get transaction status text in Vietnamese
- */
-export function getTransactionStatusText(status: string): string {
-    const statusTexts = {
-        PENDING: 'Chờ xử lý',
-        PROCESSING: 'Đang xử lý',
-        COMPLETED: 'Hoàn thành',
-        CANCELLED: 'Đã hủy',
-        DISPUTED: 'Tranh chấp',
-        PAID: 'Đã thanh toán',
-        DELIVERED: 'Đã giao hàng',
-        REFUNDED: 'Đã hoàn tiền',
-    };
-    return statusTexts[status as keyof typeof statusTexts] || status;
-}
+
 
 /**
  * Get dispute status color
@@ -107,3 +92,18 @@ export function formatFileSize(bytes: number): string {
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+
+export const getStatusLabel = (status: string) => {
+    const statusLabels = {
+        pending: 'Đang chờ',
+        confirmed: 'Đã xác nhận',
+        seller_sent: 'Người bán đã gửi',
+        buyer_received: 'Người mua đã nhận',
+        completed: 'Hoàn thành',
+        disputed: 'Tranh chấp',
+        cancelled: 'Đã hủy',
+        expired: 'Hết hạn',
+    };
+    return statusLabels[status as keyof typeof statusLabels] || status;
+};

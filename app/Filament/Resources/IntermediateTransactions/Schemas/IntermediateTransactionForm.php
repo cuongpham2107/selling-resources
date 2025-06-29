@@ -66,8 +66,6 @@ class IntermediateTransactionForm
                                             ->label('Phí giao dịch (VNĐ)')
                                             ->numeric()
                                             ->default(0)
-                                            ->disabled()
-                                            ->dehydrated(false)
                                             ->prefix('VNĐ'),
                                         
                                         TextInput::make('duration_hours')

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Flag, FileText, Download } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Flag, FileText, Download, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -348,7 +348,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/transactions">
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -474,12 +474,22 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                 <CardTitle>Thao tác nhanh</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                                <Link href={`/customer/chat/transaction/${transaction.id}`}>
-                                    <Button variant="outline" className="w-full justify-start">
-                                        <MessageSquare className="w-4 h-4 mr-2" />
-                                        Chat giao dịch
-                                    </Button>
-                                </Link>
+                                {
+                                    transaction.status === 'pending' && (
+                                        <p className='text-sm text-white font-bold bg-green-500 px-4 py-2 rounded-md flex items-center'>
+                                            <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+                                            Đang chờ xác nhận từ đối tác ...
+                                        </p>
+                                    )
+                                }
+                                {transaction.status !== 'pending' && (
+                                    <Link href={`/customer/chat/transaction/${transaction.id}`}>
+                                        <Button variant="outline" className="w-full justify-start">
+                                            <MessageSquare className="w-4 h-4 mr-2" />
+                                            Chat giao dịch
+                                        </Button>
+                                    </Link>
+                                )}
 
                                 {transaction.status === 'completed' && (
                                     <Button variant="outline" className="w-full justify-start">
@@ -506,17 +516,17 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                     <CardTitle>Thông tin đối tác</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Tên đăng nhập</p>
+                                    <div className='flex flex-row items-center space-x-3'>
+                                        <p className="text-sm font-medium text-gray-600">Tên đăng nhập:</p>
                                         <p className="font-semibold">{partner.username}</p>
                                     </div>
                                     {partner.email && (
-                                        <div>
+                                        <div className='flex flex-row items-center space-x-3'>
                                             <p className="text-sm font-medium text-gray-600">Email</p>
                                             <p className="text-sm">{partner.email}</p>
                                         </div>
                                     )}
-                                    <div>
+                                    <div className='flex flex-row items-center space-x-3'>
                                         <p className="text-sm font-medium text-gray-600">Ngày tham gia</p>
                                         <p className="text-sm">{formatDate(partner.created_at)}</p>
                                     </div>
