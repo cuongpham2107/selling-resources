@@ -231,22 +231,22 @@ class PointController extends BaseCustomerController
         $earningMethods = [
             [
                 'id' => 'daily_login',
-                'name' => 'Daily Login',
-                'description' => 'Login daily to earn points',
+                'name' => 'Đăng nhập hàng ngày',
+                'description' => 'Đăng nhập hàng ngày để nhận điểm',
                 'points' => 5,
                 'available' => true, // Check if user already claimed today
             ],
             [
                 'id' => 'complete_profile',
-                'name' => 'Complete Profile',
-                'description' => 'Complete your profile information',
+                'name' => 'Hoàn thiện hồ sơ',
+                'description' => 'Hoàn thiện thông tin hồ sơ của bạn',
                 'points' => 50,
                 'available' => false, // Check if already completed
             ],
             [
                 'id' => 'refer_friend',
-                'name' => 'Refer a Friend',
-                'description' => 'Earn points when friends join and make first purchase',
+                'name' => 'Giới thiệu bạn bè',
+                'description' => 'Nhận điểm khi bạn bè tham gia và thực hiện giao dịch đầu tiên',
                 'points' => 100,
                 'available' => true,
             ],

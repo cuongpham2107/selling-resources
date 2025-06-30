@@ -47,13 +47,18 @@ export interface Customer {
     id: number;
     username: string;
     email: string;
+    full_name?: string;
     phone?: string;
+    bio?: string;
+    avatar?: string;
     is_active: boolean;
     referral_code: string;
     referred_by?: number;
     kyc_verified_at?: string;
     kyc_data?: Record<string, unknown>;
     email_verified_at?: string;
+    last_login_at?: string;
+    password_changed_at?: string;
     created_at: string;
     updated_at: string;
     balance?: CustomerBalance;

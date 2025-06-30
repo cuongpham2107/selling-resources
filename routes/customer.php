@@ -161,8 +161,19 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
     });
 
     // Profile & Settings
-    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'show'])->name('show');
+        Route::get('edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('update', [ProfileController::class, 'update'])->name('update');
+        Route::patch('password', [ProfileController::class, 'updatePassword'])->name('password.update');
+        Route::delete('avatar', [ProfileController::class, 'deleteAvatar'])->name('avatar.delete');
+        Route::get('activity', [ProfileController::class, 'activity'])->name('activity');
+        Route::get('stats', [ProfileController::class, 'stats'])->name('stats');
+        Route::get('security', [ProfileController::class, 'security'])->name('security');
+        Route::get('preferences', [ProfileController::class, 'preferences'])->name('preferences');
+        Route::patch('preferences', [ProfileController::class, 'updatePreferences'])->name('preferences.update');
+    });
+    
     Route::get('settings', [SettingsController::class, 'index'])->name('settings');
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
     
