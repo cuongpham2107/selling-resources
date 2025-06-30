@@ -9,6 +9,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class PointTransactionForm
 {
@@ -36,14 +37,18 @@ class PointTransactionForm
                             ->numeric()
                             ->required()
                             ->minValue(1)
-                            ->suffix('C'),
+                            ->suffix('C')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
                             
                         TextInput::make('balance_after')
                             ->label('Số dư sau giao dịch')
                             ->numeric()
                             ->required()
                             ->minValue(0)
-                            ->suffix('C'),
+                            ->suffix('C')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
                     ])
                     ->columns(2),
                     

@@ -83,6 +83,22 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Get available balance computed from balance relationship
+     * 
+     * Lấy số dư khả dụng được tính từ balance relationship
+     * 
+     * @return float
+     */
+    public function getAvailableBalanceComputedAttribute(): float
+    {
+        if (!$this->balance) {
+            return 0.0;
+        }
+        
+        return $this->balance->balance - $this->balance->locked_balance;
+    }
+
+    /**
      * Get the customer's personal store
      * 
      * Lấy cửa hàng cá nhân của khách hàng

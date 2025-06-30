@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class StoreProductForm
 {
@@ -52,7 +53,9 @@ class StoreProductForm
                     ->numeric()
                     ->minValue(0)
                     ->suffix('VNĐ')
-                    ->columnSpan(1),
+                    ->columnSpan(1)
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
 
                 Toggle::make('is_active')
                     ->inline(false)

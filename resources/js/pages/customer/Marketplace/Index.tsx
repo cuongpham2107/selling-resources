@@ -113,7 +113,7 @@ export default function MarketplaceIndex({ products, stats, popularStores, filte
 
                 {/* Featured Stores */}
                 {stats.featured_stores.length > 0 && (
-                    <Card>
+                    <Card >
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Star className="h-5 w-5 text-yellow-500" />
@@ -188,7 +188,7 @@ export default function MarketplaceIndex({ products, stats, popularStores, filte
                             : "space-y-4"
                         }>
                             {products.data.map((product) => (
-                                <Card key={product.id} className="group hover:shadow-lg transition-all duration-200">
+                                <Card key={product.id} className="group hover:shadow-lg transition-all duration-200 py-0">
                                     {viewMode === 'grid' ? (
                                         <>
                                             <div className="relative">

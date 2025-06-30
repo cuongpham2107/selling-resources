@@ -13,6 +13,7 @@ use Filament\Forms\Get;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class StoreTransactionForm
 {
@@ -55,7 +56,9 @@ class StoreTransactionForm
                     ->required()
                     ->suffix('VNĐ')
                     ->minValue(0)
-                    ->columnSpan(1),
+                    ->columnSpan(1)
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
 
                 TextInput::make('fee')
                     ->label('Phí giao dịch')
@@ -63,7 +66,9 @@ class StoreTransactionForm
                     ->suffix('VNĐ')
                     ->minValue(0)
                     ->default(0)
-                    ->columnSpan(1),
+                    ->columnSpan(1)
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
 
                 Select::make('status')
                     ->label('Trạng thái')

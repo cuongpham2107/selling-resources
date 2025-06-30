@@ -61,79 +61,81 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
 
     return (
         <CustomerLayout>
-            <Head title="My Points" />
+            <Head title="Điểm của tôi" />
             
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">My Points</h1>
+                        <h1 className="text-3xl font-bold">Điểm của tôi</h1>
                         <p className="text-gray-600">
-                            Earn, spend, and exchange points for rewards
+                            Kiếm điểm, tiêu điểm và đổi điểm để nhận phần thưởng
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <Link href={route('customer.points.history')}>
                             <Button variant="outline">
                                 <History className="h-4 w-4 mr-2" />
-                                History
+                                Lịch sử
                             </Button>
                         </Link>
                     </div>
                 </div>
 
-                {/* Points Balance Card */}
-                <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {/* Points Balance Card */}
+                <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white col-span-1 md:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Star className="h-6 w-6" />
-                            Points Balance
+                            Số dư điểm
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <div className="text-3xl font-bold">
-                                    {points ? points.points.toLocaleString() : '0'}
+                                    {(points?.available_points || 0).toLocaleString()}
                                 </div>
-                                <div className="text-yellow-100">Available Points</div>
+                                <div className="text-yellow-100">Điểm khả dụng</div>
                                 <div className="text-sm text-yellow-200 mt-1">
-                                    ≈ {formatCurrency((points?.points || 0) * exchangeRate)}
+                                    ≈ {formatCurrency((points?.available_points || 0) * exchangeRate)}
                                 </div>
                             </div>
                             
                             <div>
                                 <div className="text-2xl font-semibold">
-                                    {points ? points.total_earned.toLocaleString() : '0'}
+                                    {(points?.total_earned || 0).toLocaleString()}
                                 </div>
-                                <div className="text-yellow-100">Total Earned</div>
+                                <div className="text-yellow-100">Tổng điểm kiếm được</div>
                             </div>
                             
                             <div>
                                 <div className="text-2xl font-semibold">
-                                    {points ? points.total_spent.toLocaleString() : '0'}
+                                    {(points?.total_spent || 0).toLocaleString()}
                                 </div>
-                                <div className="text-yellow-100">Total Spent</div>
+                                <div className="text-yellow-100">Tổng điểm đã tiêu</div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Exchange Rate Info */}
-                <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="p-4">
+                <Card className="h-full flex-1 bg-blue-50 border-blue-200 col-span-1 md:col-span-1">
+                    <CardContent className="p-4 ">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <ArrowUpDown className="h-5 w-5 text-blue-600" />
-                                <span className="font-medium">Exchange Rate</span>
+                                <span className="font-medium">Tỷ lệ đổi điểm</span>
                             </div>
                             <div className="text-right">
-                                <div className="font-semibold">1 Point = {formatCurrency(exchangeRate)}</div>
-                                <div className="text-sm text-gray-600">1,000 VND = 1 Point</div>
+                                <div className="font-semibold">1 Điểm = {formatCurrency(exchangeRate)}</div>
+                                <div className="text-sm text-gray-600">1.000 VND = 1 Điểm</div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
+               </div>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -141,9 +143,9 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                         <Link href={route('customer.points.earn')}>
                             <CardContent className="p-6 text-center">
                                 <Trophy className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                                <h3 className="font-semibold mb-2">Earn Points</h3>
+                                <h3 className="font-semibold mb-2">Kiếm điểm</h3>
                                 <p className="text-sm text-gray-600">
-                                    Complete tasks to earn more points
+                                    Hoàn thành các nhiệm vụ để kiếm thêm điểm
                                 </p>
                             </CardContent>
                         </Link>
@@ -153,9 +155,9 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                         <Link href={route('customer.points.exchange')}>
                             <CardContent className="p-6 text-center">
                                 <ArrowUpDown className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                                <h3 className="font-semibold mb-2">Exchange</h3>
+                                <h3 className="font-semibold mb-2">Đổi điểm</h3>
                                 <p className="text-sm text-gray-600">
-                                    Convert between points and balance
+                                    Chuyển đổi giữa điểm và số dư
                                 </p>
                             </CardContent>
                         </Link>
@@ -165,9 +167,9 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                         <Link href={route('customer.points.spend')}>
                             <CardContent className="p-6 text-center">
                                 <Gift className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                                <h3 className="font-semibold mb-2">Spend Points</h3>
+                                <h3 className="font-semibold mb-2">Tiêu điểm</h3>
                                 <p className="text-sm text-gray-600">
-                                    Redeem points for rewards and benefits
+                                    Đổi điểm lấy phần thưởng và ưu đãi
                                 </p>
                             </CardContent>
                         </Link>
@@ -178,10 +180,10 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Recent Point Transactions</CardTitle>
+                            <CardTitle>Giao dịch điểm gần đây</CardTitle>
                             <Link href={route('customer.points.history')}>
                                 <Button variant="ghost" size="sm">
-                                    View All
+                                    Xem tất cả
                                 </Button>
                             </Link>
                         </div>
@@ -203,7 +205,7 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                                         <div className="text-right">
                                             <div className={`font-semibold ${getTransactionColor(transaction.type)}`}>
                                                 {transaction.amount > 0 ? '+' : ''}
-                                                {transaction.amount.toLocaleString()} points
+                                                {(transaction.amount || 0).toLocaleString()} điểm
                                             </div>
                                             <div className="text-xs text-gray-500 capitalize">
                                                 {transaction.type.replace('_', ' ')}
@@ -215,14 +217,14 @@ export default function PointsIndex({ points, recentTransactions, exchangeRate }
                         ) : (
                             <div className="text-center py-8">
                                 <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">No point transactions yet</h3>
+                                <h3 className="text-lg font-semibold mb-2">Chưa có giao dịch điểm nào</h3>
                                 <p className="text-gray-600 mb-4">
-                                    Start earning points by completing tasks and making transactions.
+                                    Bắt đầu kiếm điểm bằng cách hoàn thành nhiệm vụ và thực hiện giao dịch.
                                 </p>
                                 <Link href={route('customer.points.earn')}>
                                     <Button>
                                         <Trophy className="h-4 w-4 mr-2" />
-                                        Start Earning Points
+                                        Bắt đầu kiếm điểm
                                     </Button>
                                 </Link>
                             </div>

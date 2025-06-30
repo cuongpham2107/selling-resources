@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class ReferralForm
 {
@@ -36,7 +37,9 @@ class ReferralForm
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
-                            ->suffix('C'),
+                            ->suffix('C')
+                             ->mask(RawJs::make('$money($input)'))
+                             ->stripCharacters(','),
                             
                         TextInput::make('successful_transactions')
                             ->label('Số giao dịch thành công')

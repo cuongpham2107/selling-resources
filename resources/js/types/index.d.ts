@@ -60,6 +60,7 @@ export interface Customer {
     points?: CustomerPoint;
     personal_store?: PersonalStore;
     referrer?: Customer;
+    available_balance_computed?: number; // Computed field from backend
 }
 
 export interface CustomerBalance {
@@ -75,7 +76,7 @@ export interface CustomerBalance {
 export interface CustomerPoint {
     id: number;
     customer_id: number;
-    points: number;
+    available_points: number;
     total_earned: number;
     total_spent: number;
     created_at: string;

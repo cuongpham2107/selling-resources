@@ -18,6 +18,10 @@ class CustomerBalance extends Model
         'locked_balance' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'available_balance',
+    ];
+
     /**
      * Get the customer that owns this balance record
      * 

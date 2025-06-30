@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class IntermediateTransactionForm
 {
@@ -60,14 +61,23 @@ class IntermediateTransactionForm
                                             ->required()
                                             ->numeric()
                                             ->minValue(0)
-                                            ->prefix('VNĐ'),
-                                        
+                                            ->prefix('VNĐ')
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters(','),
+                                        TextInput::make('tax')
+                                            ->label('Thuế (VNĐ)')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->prefix('VNĐ')
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters(','),
                                         TextInput::make('fee')
                                             ->label('Phí giao dịch (VNĐ)')
                                             ->numeric()
                                             ->default(0)
-                                            ->prefix('VNĐ'),
-                                        
+                                            ->prefix('VNĐ') 
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters(','),
                                         TextInput::make('duration_hours')
                                             ->label('Thời gian (giờ)')
                                             ->required()

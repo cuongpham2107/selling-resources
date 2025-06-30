@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Models\StoreProduct;
 use App\Models\PersonalStore;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -146,7 +147,7 @@ class MarketplaceController extends BaseCustomerController
         }
 
         $product->load([
-            'store:id,store_name,description,rating,is_verified,total_sales,total_products',
+            'store:id,owner_id,store_name,description,rating,is_verified,total_sales,total_products',
             'transactions' => function ($query) {
                 $query->where('status', 'completed')
                     ->with('buyer:id,username')
@@ -190,6 +191,7 @@ class MarketplaceController extends BaseCustomerController
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'similarProducts' => $similarProducts,
+            'currentUser' => $this->customer->load('balance')->append('available_balance_computed'),
             'analytics' => $analytics,
         ]);
     }
@@ -271,4 +273,90 @@ class MarketplaceController extends BaseCustomerController
             ]
         ]);
     }
+
+    /**
+     * Purchase a product
+     * 
+     * Mua một sản phẩm
+     */
+    public function purchase(Request $request, StoreProduct $product)
+    {
+       
+        // Validate product availability
+        if (!$product->is_active || $product->is_sold || $product->is_deleted) {
+            return back()->withErrors(['message' => 'Sản phẩm không còn khả dụng.']);
+        }
+
+        // Check if store is active
+        if (!$product->store->is_active || $product->store->is_locked) {
+            return back()->withErrors(['message' => 'Cửa hàng không hoạt động.']);
+        }
+
+        // Check if buyer is not the seller
+        if ($product->store->owner_id === $this->customer->id) {
+            return back()->withErrors(['message' => 'Không thể mua sản phẩm của chính mình.']);
+        }
+
+        // Check if customer has enough balance
+        if (!$this->customer->balance->hasEnoughBalance($product->price)) {
+            return back()->withErrors(['message' => 'Số dư ví không đủ để thực hiện giao dịch.']);
+        }
+
+        // Generate unique transaction code
+        do {
+            $transactionCode = strtoupper(bin2hex(random_bytes(8)));
+            $transactionCode = substr($transactionCode, 0, 4) . '-' .
+                               substr($transactionCode, 4, 4) . '-' .
+                               substr($transactionCode, 8, 4) . '-' .
+                               substr($transactionCode, 12, 4);
+        
+        } while (\App\Models\StoreTransaction::where('transaction_code', $transactionCode)->exists());
+
+        try {
+            DB::beginTransaction();
+
+            // Create store transaction
+            $transaction = \App\Models\StoreTransaction::create([
+                'transaction_code' => $transactionCode,
+                'buyer_id' => $this->customer->id,
+                'seller_id' => $product->store->owner_id,
+                'product_id' => $product->id,
+                'amount' => $product->price,
+                'fee' => $product->price * 0.01, // 1% fee
+                'status' => 'processing',
+            ]);
+            
+
+            //Đặt thời gian tự động hoàn thành (mặc định là 72 giờ)
+            $transaction->setAutoCompleteTime();
+
+            // Deduct money from buyer's balance
+            if (!$this->customer->balance->deductBalance($product->price)) {
+                throw new \Exception('Không thể trừ tiền từ số dư.');
+            }
+            // Mark product as sold
+            $product->update(['is_sold' => true]);
+
+            // Create wallet transaction for buyer
+            \App\Models\WalletTransaction::create([
+                'customer_id' => $this->customer->id,
+                'type' => 'debit',
+                'transaction_type' => 'store_purchase',
+                'amount' => $product->price,
+                'description' => "Mua sản phẩm: {$product->name}",
+                'reference_id' => $transaction->id,
+                'status' => 'completed',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('customer.store.transactions.show', $transaction)
+                ->with('success', 'Đã mua sản phẩm thành công! Giao dịch sẽ tự động hoàn thành sau 72 giờ.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['message' => 'Có lỗi xảy ra khi xử lý giao dịch. Vui lòng thử lại.']);
+        }
+    }
+
 }

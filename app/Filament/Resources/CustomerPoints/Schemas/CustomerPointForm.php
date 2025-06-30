@@ -6,6 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class CustomerPointForm
 {
@@ -29,7 +30,9 @@ class CustomerPointForm
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
-                            ->suffix('C'),
+                            ->suffix('C')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
                     ]),
             ]);
     }

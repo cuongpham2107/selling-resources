@@ -177,7 +177,7 @@ export default function StoreDetail({ store, products, storeStats, filters }: St
                             : "space-y-4"
                         }>
                             {products.data.map((product) => (
-                                <Card key={product.id} className="group hover:shadow-lg transition-all duration-200">
+                                <Card key={product.id} className="group hover:shadow-lg transition-all duration-200 py-0">
                                     {viewMode === 'grid' ? (
                                         <>
                                             <div className="relative">

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamp('confirmed_at')->nullable();
             $table->timestamp('seller_sent_at')->nullable();
             $table->timestamp('buyer_received_at')->nullable();
-            $table->timestamp('expires_at');
+            $table->timestamp('expires_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 

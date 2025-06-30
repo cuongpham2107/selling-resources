@@ -5,13 +5,13 @@ namespace App\Filament\Resources\WalletTransactions\Schemas;
 use App\Enums\PaymentMethod;
 use App\Enums\WalletTransactionStatus;
 use App\Enums\WalletTransactionType;
-use App\Models\Customer;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\KeyValue;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 
 class WalletTransactionForm
 {
@@ -38,18 +38,24 @@ class WalletTransactionForm
                     
                 TextInput::make('amount')
                     ->label('Số tiền (VND)')
+                     ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(',')
                     ->numeric()
                     ->prefix('₫')
                     ->required(),
                     
                 TextInput::make('fee')
                     ->label('Phí (VND)')
+                     ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(',')
                     ->numeric()
                     ->prefix('₫')
                     ->default(0),
                     
                 TextInput::make('net_amount')
                     ->label('Số tiền thực nhận (VND)')
+                     ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(',')
                     ->numeric()
                     ->prefix('₫')
                     ->disabled()

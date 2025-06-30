@@ -6,6 +6,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
+
 
 class TransactionFeeForm
 {
@@ -21,20 +23,26 @@ class TransactionFeeForm
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('VNĐ'),
+                            ->suffix('VNĐ')
+                             ->mask(RawJs::make('$money($input)'))
+                             ->stripCharacters(','),
                             
                         TextInput::make('max_amount')
                             ->label('Số tiền tối đa')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('VNĐ'),
+                            ->suffix('VNĐ')
+                             ->mask(RawJs::make('$money($input)'))
+                             ->stripCharacters(','),
                             
                         TextInput::make('fee_amount')
                             ->label('Phí cố định')
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('VNĐ'),
+                            ->suffix('VNĐ')
+                             ->mask(RawJs::make('$money($input)'))
+                             ->stripCharacters(','),
                             
                         TextInput::make('fee_percentage')
                             ->label('Phí theo phần trăm')
@@ -59,7 +67,9 @@ class TransactionFeeForm
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('C'),
+                            ->suffix('C')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
                             
                         Toggle::make('is_active')
                             ->label('Kích hoạt')

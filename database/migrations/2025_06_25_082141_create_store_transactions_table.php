@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('fee', 15, 2)->default(0);
             $table->enum('status', ['processing', 'completed', 'disputed', 'cancelled'])->default('processing');
             $table->timestamp('completed_at')->nullable();
-            $table->timestamp('auto_complete_at'); // Sau 3 ngày tự hoàn thành
+            $table->timestamp('auto_complete_at')->nullable(); // Sau 3 ngày tự hoàn thành
             $table->boolean('buyer_early_complete')->default(false); // Người mua kết thúc sớm
             $table->timestamps();
 

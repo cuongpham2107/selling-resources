@@ -71,7 +71,7 @@ class PointController extends BaseCustomerController
     {
         $balance = CustomerBalance::where('customer_id', $this->customer->id)->first();
         
-        if (!$balance || $balance->available_balance < $vndAmount) {
+        if (!$balance || !$balance->hasEnoughBalance($vndAmount)) {
             return back()->withErrors(['amount' => 'Số dư không đủ.']);
         }
 
@@ -84,7 +84,9 @@ class PointController extends BaseCustomerController
         );
 
         // Perform exchange
-        $balance->decrement('available_balance', $vndAmount);
+        if (!$balance->deductBalance($vndAmount)) {
+            return back()->withErrors(['amount' => 'Không thể trừ tiền từ số dư.']);
+        }
         $points->increment('available_points', $pointsAmount);
         $points->increment('total_earned', $pointsAmount);
 
@@ -113,13 +115,15 @@ class PointController extends BaseCustomerController
         // Get or create customer balance record
         $balance = CustomerBalance::firstOrCreate(
             ['customer_id' => $this->customer->id],
-            ['available_balance' => 0, 'pending_balance' => 0]
+            ['balance' => 0, 'locked_balance' => 0]
         );
 
         // Perform exchange
         $points->decrement('available_points', $pointsAmount);
         $points->increment('total_spent', $pointsAmount);
-        $balance->increment('available_balance', $vndAmount);
+        if (!$balance->addBalance($vndAmount)) {
+            return back()->withErrors(['amount' => 'Không thể thêm tiền vào số dư.']);
+        }
 
         // Record transaction
         PointTransaction::create([

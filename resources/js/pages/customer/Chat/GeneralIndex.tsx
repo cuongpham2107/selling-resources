@@ -15,9 +15,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import CustomerLayout from '@/layouts/CustomerLayout';
+import { formatDateTime } from '@/lib/date';
 import { Customer } from '@/types';
 import { router } from '@inertiajs/react';
 import { AlertCircle, BadgeDollarSign, DollarSign, Flag, Info, MessageSquare, Package, Send, Users, Eye} from 'lucide-react';
@@ -165,6 +168,18 @@ export default function GeneralChat({
     const handleCloseReportDialog = () => {
         setIsReportDialogOpen(false);
         setSelectedMessageForReport(null);
+
+        // Force cleanup of any modal state
+        setTimeout(() => {
+            setSelectedUser(null);
+
+            // Additional cleanup for any stuck modal states
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+
+            // Remove any data attributes that might be causing issues
+            document.body.removeAttribute('data-scroll-locked');
+        }, 100);
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -192,14 +207,6 @@ export default function GeneralChat({
         router.get(`/customer/marketplace/product/${productId}`);
     };
 
-    const formatTime = (dateString: string) => {
-        return new Date(dateString).toLocaleString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit',
-        });
-    };
 
     return (
         <CustomerLayout>
@@ -227,13 +234,15 @@ export default function GeneralChat({
                                             <Info className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="max-w-md">
+                                    <DialogContent className="sm:max-w-md">
                                         <DialogHeader>
                                             <DialogTitle className="flex items-center gap-2">
                                                 <AlertCircle className="h-5 w-5 text-orange-600" />
                                                 Quy tắc phòng chat
                                             </DialogTitle>
-                                            <DialogDescription>Tìm hiểu các quy tắc và hướng dẫn sử dụng phòng chat tổng</DialogDescription>
+                                            <DialogDescription>
+                                                Tìm hiểu các quy tắc và hướng dẫn sử dụng phòng chat tổng
+                                            </DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-4 text-sm">
                                             <div className="space-y-2">
@@ -258,6 +267,20 @@ export default function GeneralChat({
                                                 <p className="text-xs text-gray-500">Vi phạm quy tắc có thể dẫn đến việc tạm khóa tài khoản</p>
                                             </div>
                                         </div>
+                                        <DialogFooter className="sm:justify-start">
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => router.get('/customer/chat/general/rules')}
+                                                className="flex-1"
+                                            >
+                                                Xem quy tắc chi tiết
+                                            </Button>
+                                            <DialogClose asChild>
+                                                <Button type="button" variant="secondary">
+                                                    Đóng
+                                                </Button>
+                                            </DialogClose>
+                                        </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
                             </div>
@@ -333,7 +356,7 @@ export default function GeneralChat({
                                                                   hour: '2-digit',
                                                                   minute: '2-digit',
                                                               })
-                                                            : formatTime(msg.created_at)}
+                                                            : formatDateTime(msg.created_at)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -363,7 +386,7 @@ export default function GeneralChat({
                                                                       hour: '2-digit',
                                                                       minute: '2-digit',
                                                                   })
-                                                                : formatTime(msg.created_at)}
+                                                                : formatDateTime(msg.created_at)}
                                                         </p>
                                                     </div>
                                                 </ContextMenuTrigger>
@@ -501,7 +524,7 @@ export default function GeneralChat({
                         modal={true}
                     >
                         <DialogContent
-                            className="max-h-[90vh] max-w-xl overflow-y-auto md:max-w-5xl"
+                            className="sm:max-w-5xl max-h-[90vh] overflow-y-auto"
                             onPointerDownOutside={() => {
                                 handleCloseTransactionDialog();
                             }}
@@ -521,10 +544,14 @@ export default function GeneralChat({
                                 onSuccess={handleCloseTransactionDialog}
                                 isInDialog={true}
                                 renderButtons={({ loading, canSubmit, onCancel, onSubmit }) => (
-                                    <DialogFooter>
+                                    <DialogFooter className="sm:justify-start">
+                                        <Button onClick={onSubmit} disabled={!canSubmit}>
+                                            {loading ? 'Đang tạo...' : 'Tạo giao dịch'}
+                                        </Button>
                                         <DialogClose asChild>
                                             <Button
-                                                variant="outline"
+                                                type="button"
+                                                variant="secondary"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     onCancel();
@@ -533,9 +560,6 @@ export default function GeneralChat({
                                                 Hủy
                                             </Button>
                                         </DialogClose>
-                                        <Button onClick={onSubmit} disabled={!canSubmit}>
-                                            {loading ? 'Đang tạo...' : 'Tạo giao dịch'}
-                                        </Button>
                                     </DialogFooter>
                                 )}
                             />

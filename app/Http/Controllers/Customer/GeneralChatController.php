@@ -61,7 +61,6 @@ class GeneralChatController extends BaseCustomerController
             ->select('id', 'name', 'price')
             ->orderBy('name')
             ->get();
-
         return Inertia::render('customer/Chat/GeneralIndex', [
             'canSendMessage' => $canSendMessage,
             'remainingMessages' => $remainingMessages,

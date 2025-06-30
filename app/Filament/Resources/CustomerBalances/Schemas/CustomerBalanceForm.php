@@ -5,7 +5,7 @@ namespace App\Filament\Resources\CustomerBalances\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-
+use Filament\Support\RawJs;
 class CustomerBalanceForm
 {
     public static function configure(Schema $schema): Schema
@@ -15,6 +15,7 @@ class CustomerBalanceForm
                 Select::make('customer_id')
                     ->label('Khách hàng')
                     ->relationship('customer', 'username')
+                    ->disabled()
                     ->required()
                     ->searchable()
                     ->preload(),
@@ -25,7 +26,9 @@ class CustomerBalanceForm
                     ->numeric()
                     ->default(0)
                     ->minValue(0)
-                    ->suffix('VNĐ'),
+                    ->suffix('VNĐ')
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
                     
                 TextInput::make('locked_balance')
                     ->label('Số dư bị khóa')
@@ -33,7 +36,9 @@ class CustomerBalanceForm
                     ->numeric()
                     ->default(0)
                     ->minValue(0)
-                    ->suffix('VNĐ'),
-            ]);
+                    ->suffix('VNĐ')
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
+            ])->columns(3);
     }
 }

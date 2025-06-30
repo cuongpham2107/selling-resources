@@ -88,7 +88,7 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
         },
         {
             title: 'Chat tổng',
-            href: '/customer/chat/general',
+            href: '/customer/chat/general/room',
             icon: MessageSquare,
         },
         {

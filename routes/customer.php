@@ -15,9 +15,11 @@ use App\Http\Controllers\Customer\ReferralController;
 use App\Http\Controllers\Customer\ReportGeneralChatController;
 use App\Http\Controllers\Customer\SettingsController;
 use App\Http\Controllers\Customer\StoreController;
+use App\Http\Controllers\Customer\StoreTransactionController;
 use App\Http\Controllers\Customer\TransactionController;
 use App\Http\Controllers\Customer\WalletController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 // Guest routes - redirect to dashboard if already authenticated
 Route::prefix('customer')->name('customer.')->middleware('customer.guest')->group(function () {
@@ -57,12 +59,21 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
         Route::delete('{store}', [StoreController::class, 'destroy'])->name('destroy');
         Route::get('{store}/products', [StoreController::class, 'products'])->name('products');
         Route::get('{store}/analytics', [StoreController::class, 'analytics'])->name('analytics');
+        
+        // Store transaction routes
+        Route::prefix('transactions')->name('transactions.')->group(function () {
+            Route::get('/', [StoreTransactionController::class, 'index'])->name('index');
+            Route::get('{transaction}', [StoreTransactionController::class, 'show'])->name('show');
+            Route::post('{transaction}/complete', [StoreTransactionController::class, 'complete'])->name('complete');
+            Route::post('{transaction}/dispute', [StoreTransactionController::class, 'dispute'])->name('dispute');
+        });
     });
 
     // Marketplace routes
     Route::prefix('marketplace')->name('marketplace.')->group(function () {
         Route::get('/', [MarketplaceController::class, 'index'])->name('index');
         Route::get('product/{product}', [MarketplaceController::class, 'show'])->name('product.show');
+        Route::post('product/{product}/purchase', [MarketplaceController::class, 'purchase'])->name('product.purchase');
         Route::get('store/{store}', [MarketplaceController::class, 'store'])->name('store.show');
     });
 
@@ -127,8 +138,13 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
 
     Route::prefix('points')->name('points.')->group(function () {
         Route::get('/', [PointController::class, 'index'])->name('index');
-        Route::post('convert', [PointController::class, 'convertToVND'])->name('convert');
-        Route::post('send', [PointController::class, 'send'])->name('send');
+        Route::get('exchange', [PointController::class, 'exchange'])->name('exchange');
+        Route::post('exchange', [PointController::class, 'processExchange'])->name('exchange.process');
+        Route::get('spend', [PointController::class, 'spend'])->name('spend');
+        Route::post('spend', [PointController::class, 'processSpend'])->name('spend.process');
+        Route::get('history', [PointController::class, 'history'])->name('history');
+        Route::get('earn', [PointController::class, 'earn'])->name('earn');
+        Route::post('earn', [PointController::class, 'claimEarning'])->name('earn.claim');
     });
 
     // Referrals
@@ -149,4 +165,5 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
     Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('settings', [SettingsController::class, 'index'])->name('settings');
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
+    
 });
