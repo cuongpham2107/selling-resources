@@ -97,10 +97,10 @@ export default function ProfileStats({ customer, stats }: ProfileStatsPageProps)
 
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/profile">
                             <Button variant="ghost" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -179,7 +179,7 @@ export default function ProfileStats({ customer, stats }: ProfileStatsPageProps)
                                         <div>
                                             <p className="text-sm font-medium text-gray-600">Điểm tích lũy</p>
                                             <p className="text-xl font-bold text-gray-900">
-                                                {formatNumber(customer.points?.available_points || 0)}
+                                                {formatNumber(customer?.points?.available_points ?? 0)}
                                             </p>
                                         </div>
                                     </div>
@@ -406,7 +406,7 @@ export default function ProfileStats({ customer, stats }: ProfileStatsPageProps)
                                         </p>
                                         <div className="pt-4 border-t">
                                             <p className="text-sm font-medium">
-                                                Điểm hiện có: {formatNumber(customer.points?.available_points || 0)}
+                                                Điểm hiện có: {formatNumber(customer?.points?.available_points ?? 0)}
                                             </p>
                                         </div>
                                     </div>

@@ -96,6 +96,7 @@ class ProfileController extends BaseCustomerController
 
         $this->customer->update([
             'password' => Hash::make($validated['password']),
+            'password_changed_at' => now(),
         ]);
 
         return redirect()->route('customer.profile.show')
@@ -536,22 +537,22 @@ class ProfileController extends BaseCustomerController
         
         // Add account creation as first security activity
         $securityActivities->push([
-            'id' => 'account_created',
+            'id' => 1,
             'activity' => 'Tạo tài khoản',
             'ip_address' => request()->ip() ?? '127.0.0.1',
             'user_agent' => request()->userAgent() ?? 'Unknown',
-            'created_at' => $this->customer->created_at->toISOString(),
+            'created_at' => $this->customer->created_at->format('c'),
             'is_suspicious' => false,
         ]);
 
         // Add password change activity if password_changed_at exists
         if ($this->customer->password_changed_at) {
             $securityActivities->push([
-                'id' => 'password_changed',
+                'id' => 2,
                 'activity' => 'Đổi mật khẩu',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->password_changed_at->toISOString(),
+                'created_at' => $this->customer->password_changed_at->format('c'),
                 'is_suspicious' => false,
             ]);
         }
@@ -559,11 +560,11 @@ class ProfileController extends BaseCustomerController
         // Add email verification activity
         if ($this->customer->email_verified_at) {
             $securityActivities->push([
-                'id' => 'email_verified',
+                'id' => 3,
                 'activity' => 'Xác thực email',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => \Carbon\Carbon::parse($this->customer->email_verified_at)->toISOString(),
+                'created_at' => $this->customer->email_verified_at->format('c'),
                 'is_suspicious' => false,
             ]);
         }
@@ -571,11 +572,11 @@ class ProfileController extends BaseCustomerController
         // Add KYC verification activity
         if ($this->customer->kyc_verified_at) {
             $securityActivities->push([
-                'id' => 'kyc_verified',
+                'id' => 4,
                 'activity' => 'Xác thực KYC',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => \Carbon\Carbon::parse($this->customer->kyc_verified_at)->toISOString(),
+                'created_at' => $this->customer->kyc_verified_at->format('c'),
                 'is_suspicious' => false,
             ]);
         }
@@ -587,13 +588,13 @@ class ProfileController extends BaseCustomerController
             ->limit(3)
             ->get();
 
-        $highValueTransactions->each(function ($transaction) use ($securityActivities) {
+        $highValueTransactions->each(function ($transaction, $index) use ($securityActivities) {
             $securityActivities->push([
-                'id' => 'high_value_transaction_' . $transaction->id,
+                'id' => 1000 + $transaction->id, // Use a unique numeric ID
                 'activity' => 'Giao dịch giá trị cao',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $transaction->created_at->toISOString(),
+                'created_at' => $transaction->created_at->format('c'),
                 'is_suspicious' => $transaction->amount > 5000000, // Flag transactions over 5M as potentially suspicious
             ]);
         });
@@ -605,14 +606,14 @@ class ProfileController extends BaseCustomerController
             ->limit(3)
             ->get();
 
-        $recentWalletActivities->each(function ($transaction) use ($securityActivities) {
+        $recentWalletActivities->each(function ($transaction, $index) use ($securityActivities) {
             $activityName = $transaction->type === 'topup' ? 'Nạp tiền vào ví' : 'Rút tiền từ ví';
             $securityActivities->push([
-                'id' => 'wallet_' . $transaction->id,
+                'id' => 2000 + $transaction->id, // Use a unique numeric ID
                 'activity' => $activityName,
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $transaction->created_at->toISOString(),
+                'created_at' => $transaction->created_at->format('c'),
                 'is_suspicious' => $transaction->type === 'withdraw' && $transaction->amount > 2000000, // Large withdrawals might be suspicious
             ]);
         });
@@ -625,8 +626,9 @@ class ProfileController extends BaseCustomerController
             ->all();
 
         return Inertia::render('customer/Profile/Security', [
+            'customer' => $this->customer,
             'security_activities' => $sortedActivities,
-            'two_factor_enabled' => false, // TODO: Implement 2FA feature
+            'two_factor_enabled' => !empty($this->customer->two_factor_secret), // Check if 2FA is actually enabled
         ]);
     }
 
@@ -701,5 +703,100 @@ class ProfileController extends BaseCustomerController
         
         return redirect()->route('customer.profile.preferences')
             ->with('success', 'Tùy chọn đã được cập nhật thành công!');
+    }
+
+    public function enableTwoFactorAuthentication(Request $request)
+    {
+        if ($this->customer->two_factor_secret) {
+            return back()->withErrors(['message' => '2FA đã được bật cho tài khoản này.']);
+        }
+
+        $this->customer->enableTwoFactorAuthentication();
+
+        return response()->json([
+            'message' => '2FA đã được bật thành công.',
+            'qr_code' => $this->customer->twoFactorQrCodeSvg(),
+            'setup_key' => decrypt($this->customer->two_factor_secret),
+            'recovery_codes' => json_decode(decrypt($this->customer->two_factor_recovery_codes)),
+        ]);
+    }
+
+    public function confirmTwoFactorAuthentication(Request $request)
+    {
+        $request->validate([
+            'code' => ['required', 'string'],
+        ]);
+
+        if (!$this->customer->confirmTwoFactorAuthentication($request->code)) {
+            return back()->withErrors(['code' => 'Mã xác thực không hợp lệ.']);
+        }
+
+        return back()->with('success', '2FA đã được xác nhận thành công.');
+    }
+
+    public function disableTwoFactorAuthentication(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password:customer'],
+        ]);
+
+        $this->customer->disableTwoFactorAuthentication();
+
+        return back()->with('success', '2FA đã được tắt thành công.');
+    }
+
+    public function getTwoFactorRecoveryCodes()
+    {
+        if (!$this->customer->two_factor_secret) {
+            return response()->json([
+                'error' => '2FA chưa được bật.',
+                'recovery_codes' => []
+            ], 400);
+        }
+
+        if (!$this->customer->two_factor_recovery_codes) {
+            return response()->json([
+                'error' => 'Không có mã khôi phục nào được tìm thấy.',
+                'recovery_codes' => []
+            ], 404);
+        }
+
+        try {
+            $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
+            
+            return response()->json([
+                'recovery_codes' => $recoveryCodes ?: [],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Không thể giải mã mã khôi phục.',
+                'recovery_codes' => []
+            ], 500);
+        }
+    }
+
+    public function regenerateTwoFactorRecoveryCodes()
+    {
+        if (!$this->customer->two_factor_secret) {
+            return response()->json([
+                'error' => '2FA chưa được bật.',
+                'recovery_codes' => []
+            ], 400);
+        }
+
+        try {
+            $this->customer->replaceRecoveryCodes();
+            $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
+
+            return response()->json([
+                'recovery_codes' => $recoveryCodes ?: [],
+                'message' => 'Mã khôi phục đã được tạo lại thành công.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Không thể tạo lại mã khôi phục.',
+                'recovery_codes' => []
+            ], 500);
+        }
     }
 }

@@ -210,6 +210,13 @@ Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'cust
         Route::get('security', [ProfileController::class, 'security'])->name('security');
         Route::get('preferences', [ProfileController::class, 'preferences'])->name('preferences');
         Route::patch('preferences', [ProfileController::class, 'updatePreferences'])->name('preferences.update');
+        
+        // Two-Factor Authentication
+        Route::post('two-factor-authentication', [ProfileController::class, 'enableTwoFactorAuthentication'])->name('two-factor.enable');
+        Route::post('confirmed-two-factor-authentication', [ProfileController::class, 'confirmTwoFactorAuthentication'])->name('two-factor.confirm');
+        Route::delete('two-factor-authentication', [ProfileController::class, 'disableTwoFactorAuthentication'])->name('two-factor.disable');
+        Route::get('two-factor-recovery-codes', [ProfileController::class, 'getTwoFactorRecoveryCodes'])->name('two-factor.recovery-codes');
+        Route::post('two-factor-recovery-codes', [ProfileController::class, 'regenerateTwoFactorRecoveryCodes'])->name('two-factor.recovery-codes.regenerate');
     });
     
     Route::get('settings', [SettingsController::class, 'index'])->name('settings');

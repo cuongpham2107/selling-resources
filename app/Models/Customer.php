@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 
 class Customer extends Authenticatable implements MustVerifyEmail
 {
-    use Notifiable;
+    use Notifiable, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'username',
@@ -26,19 +27,24 @@ class Customer extends Authenticatable implements MustVerifyEmail
         'referred_by',
         'kyc_verified_at',
         'kyc_data',
+        'password_changed_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'kyc_verified_at' => 'datetime',
+        'password_changed_at' => 'datetime',
         'kyc_data' => 'array',
         'is_active' => 'boolean',
         'password' => 'hashed',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     /**
@@ -381,5 +387,91 @@ class Customer extends Authenticatable implements MustVerifyEmail
     public function walletTransactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class);
+    }
+
+    /**
+     * Enable two factor authentication for the customer.
+     */
+    public function enableTwoFactorAuthentication(): void
+    {
+        $this->forceFill([
+            'two_factor_secret' => encrypt(app(\Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider::class)->generateSecretKey()),
+            'two_factor_recovery_codes' => encrypt(json_encode(\Laravel\Fortify\RecoveryCode::generate())),
+        ])->save();
+    }
+
+    /**
+     * Confirm two factor authentication for the customer.
+     */
+    public function confirmTwoFactorAuthentication(string $code): bool
+    {
+        if (app(\Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider::class)->verify(
+            decrypt($this->two_factor_secret), $code
+        )) {
+            $this->forceFill([
+                'two_factor_confirmed_at' => now(),
+            ])->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Disable two factor authentication for the customer.
+     */
+    public function disableTwoFactorAuthentication(): void
+    {
+        $this->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+    }
+
+    /**
+     * Replace the given recovery codes.
+     */
+    public function replaceRecoveryCodes(): void
+    {
+        $this->forceFill([
+            'two_factor_recovery_codes' => encrypt(json_encode(\Laravel\Fortify\RecoveryCode::generate())),
+        ])->save();
+    }
+
+    /**
+     * Get the QR code SVG for the customer's two factor authentication.
+     */
+    public function twoFactorQrCodeSvg(): string
+    {
+        if (!$this->two_factor_secret) {
+            return '';
+        }
+
+        $writer = new \BaconQrCode\Writer(
+            new \BaconQrCode\Renderer\ImageRenderer(
+                new \BaconQrCode\Renderer\RendererStyle\RendererStyle(200),
+                new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+            )
+        );
+
+        return $writer->writeString($this->twoFactorQrCodeUrl());
+    }
+
+    /**
+     * Get the QR code URL for the customer's two factor authentication.
+     */
+    public function twoFactorQrCodeUrl(): string
+    {
+        if (!$this->two_factor_secret) {
+            return '';
+        }
+
+        $secret = decrypt($this->two_factor_secret);
+        $appName = urlencode(config('app.name'));
+        $email = urlencode($this->email);
+        
+        return "otpauth://totp/{$appName}:{$email}?secret={$secret}&issuer={$appName}";
     }
 }

@@ -126,3 +126,21 @@ Trong `config/auth.php`:
 
 ### Thay đổi UI:
 Chỉnh sửa `resources/js/pages/customer/auth/VerifyEmail.tsx`
+
+
+
+network báo
+Request URL
+http://localhost:8000/customer/profile/two-factor-recovery-codes
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+127.0.0.1:8000
+response {"recovery_codes":"mr8Nbfv67W-qRWi4gpYZD"}
+
+nhưng pupop hiển thị Mã khôi phục
+Lưu trữ các mã này ở nơi an toàn. Mỗi mã chỉ có thể sử dụng một lần.
+
+Không thể tải mã khôi phục. Vui lòng thử lại.
