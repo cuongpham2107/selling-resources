@@ -40,7 +40,7 @@ class RegisteredCustomerController extends Controller
            
             
         }
-        return Inertia::render('customer/Register', [
+        return Inertia::render('customer/auth/Register', [
             'referralCode' => $request->query('ref'),
         ]);
     }
@@ -96,7 +96,7 @@ class RegisteredCustomerController extends Controller
             'phone' => $request->phone,
             'referral_code' => $referralCode,
             'referred_by' => $referrer?->id,
-            'is_active' => true,
+            'is_active' => false, // Will be set to true after email verification
         ]);
 
         // Create customer balance with 0 VND
@@ -128,8 +128,13 @@ class RegisteredCustomerController extends Controller
 
         event(new Registered($customer));
 
-        Auth::guard('customer')->login($customer);
+        // Send email verification notification
+        $customer->sendEmailVerificationNotification();
 
-        return redirect()->route('customer.dashboard');
+        // Store email in session for resending verification
+        session(['registration_email' => $customer->email]);
+
+        // Return response indicating that verification email was sent
+        return redirect()->route('customer.verification.notice');
     }
 }

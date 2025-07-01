@@ -27,8 +27,6 @@ class SettingsController extends BaseCustomerController
 
     public function notifications(): Response
     {
-        $customer = Auth::guard('customer')->user();
-        
         // Get current notification settings
         $settings = [
             'email_notifications' => true,
@@ -276,7 +274,6 @@ class SettingsController extends BaseCustomerController
 
     public function exportData(Request $request): RedirectResponse
     {
-        $customer = Auth::guard('customer')->user();
         
         $validated = $request->validate([
             'data_types' => ['required', 'array'],

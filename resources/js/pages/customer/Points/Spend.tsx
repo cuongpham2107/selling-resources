@@ -83,11 +83,24 @@ export default function Spend({ points, spendingOptions }: Props) {
         }
     };
 
+    const getTypeLabel = (type: string) => {
+        switch (type) {
+            case 'discount':
+                return 'Giảm giá';
+            case 'service':
+                return 'Dịch vụ';
+            case 'promotion':
+                return 'Khuyến mãi';
+            default:
+                return 'Khác';
+        }
+    };
+
     return (
         <CustomerLayout>
             <Head title="Tiêu điểm" />
 
-            <div className="space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold">Tiêu điểm</h1>
@@ -136,7 +149,7 @@ export default function Spend({ points, spendingOptions }: Props) {
                                             <CardTitle className="text-lg">{option.name}</CardTitle>
                                         </div>
                                         <Badge className={getTypeColor(option.type)}>
-                                            {option.type}
+                                            {getTypeLabel(option.type)}
                                         </Badge>
                                     </div>
                                 </CardHeader>
@@ -172,7 +185,7 @@ export default function Spend({ points, spendingOptions }: Props) {
                                             'Đang xử lý...'
                                         ) : (
                                             <>
-                                                Sử dụng
+                                                Đổi ngay
                                                 <ArrowRight className="h-4 w-4 ml-2" />
                                             </>
                                         )}

@@ -4,6 +4,7 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectIfCustomerAuthenticated;
 use App\Http\Middleware\RedirectIfCustomerNotAuthenticated;
+use App\Http\Middleware\EnsureCustomerEmailIsVerified;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'customer.guest' => RedirectIfCustomerAuthenticated::class,
             'customer.auth' => RedirectIfCustomerNotAuthenticated::class,
+            'customer.verified' => EnsureCustomerEmailIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

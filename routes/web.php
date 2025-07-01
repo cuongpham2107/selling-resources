@@ -13,3 +13,8 @@ Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/customer.php';
+
+// Fallback route - redirect any undefined routes to home page
+Route::fallback(function () {
+    return redirect()->route('home');
+});

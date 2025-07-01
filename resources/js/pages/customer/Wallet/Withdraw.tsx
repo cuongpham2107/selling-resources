@@ -12,9 +12,10 @@ import type { CustomerBalance } from '@/types';
 interface Props {
     balance: CustomerBalance | null;
     minWithdraw: number;
+    quickAmounts: number[];
 }
 
-export default function Withdraw({ balance, minWithdraw }: Props) {
+export default function Withdraw({ balance, minWithdraw, quickAmounts }: Props) {
     const [amount, setAmount] = useState('');
     const [bankName, setBankName] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
@@ -55,8 +56,6 @@ export default function Withdraw({ balance, minWithdraw }: Props) {
             setLoading(false);
         }
     };
-
-    const quickAmounts = [50000, 100000, 500000, 1000000];
 
     return (
         <CustomerLayout>

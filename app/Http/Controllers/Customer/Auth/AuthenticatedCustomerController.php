@@ -17,7 +17,7 @@ class AuthenticatedCustomerController extends Controller
      */
     public function create(Request $request): Response
     {
-        return Inertia::render('customer/Login', [
+        return Inertia::render('customer/auth/Login', [
             'status' => $request->session()->get('status'),
         ]);
     }

@@ -77,10 +77,10 @@ export default function CreateStore({ errors = {}, message }: CreateStorePagePro
         <CustomerLayout>
             <Head title="Tạo cửa hàng mới" />
             
-            <div className="space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/store">
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -196,7 +196,7 @@ export default function CreateStore({ errors = {}, message }: CreateStorePagePro
                     </Card>
 
                     {/* Submit Button */}
-                    <div className="flex justify-end gap-4">
+                    <div className="flex justify-end gap-4 col-span-3">
                         <Link href="/customer/store">
                             <Button type="button" variant="outline">
                                 Hủy bỏ

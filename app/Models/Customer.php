@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
-class Customer extends Authenticatable
+
+class Customer extends Authenticatable implements MustVerifyEmail
 {
     use Notifiable;
 
@@ -337,6 +339,27 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new \App\Notifications\Customer\VerifyEmail());
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\Customer\ResetPasswordNotification($token));
+    }
+
+    /**
      * Get the referral link attribute for the customer
      * 
      * Lấy liên kết giới thiệu của khách hàng
@@ -346,5 +369,17 @@ class Customer extends Authenticatable
     public function getReferralLinkAttribute(): string
     {
         return url("/?ref={$this->referral_code}");
+    }
+
+    /**
+     * Get all wallet transactions for this customer
+     * 
+     * Lấy tất cả giao dịch ví của khách hàng này
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function walletTransactions(): HasMany
+    {
+        return $this->hasMany(WalletTransaction::class);
     }
 }

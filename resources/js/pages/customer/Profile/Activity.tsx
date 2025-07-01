@@ -40,9 +40,15 @@ interface ProfileActivityPageProps {
             total: number;
         };
     };
+    activity_stats: {
+        purchase_count: number;
+        topup_count: number;
+        payment_count: number;
+        message_count: number;
+    };
 }
 
-export default function ProfileActivity({ activities }: ProfileActivityPageProps) {
+export default function ProfileActivity({ activities, activity_stats }: ProfileActivityPageProps) {
     const [activeTab, setActiveTab] = useState('all');
     const [timeFilter, setTimeFilter] = useState('all');
 
@@ -143,7 +149,7 @@ export default function ProfileActivity({ activities }: ProfileActivityPageProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Giao dịch mua</p>
-                                    <p className="text-xl font-bold">24</p>
+                                    <p className="text-xl font-bold">{activity_stats.purchase_count}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -156,7 +162,7 @@ export default function ProfileActivity({ activities }: ProfileActivityPageProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Nạp tiền</p>
-                                    <p className="text-xl font-bold">8</p>
+                                    <p className="text-xl font-bold">{activity_stats.topup_count}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -169,7 +175,7 @@ export default function ProfileActivity({ activities }: ProfileActivityPageProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Thanh toán</p>
-                                    <p className="text-xl font-bold">32</p>
+                                    <p className="text-xl font-bold">{activity_stats.payment_count}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -182,7 +188,7 @@ export default function ProfileActivity({ activities }: ProfileActivityPageProps
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Tin nhắn</p>
-                                    <p className="text-xl font-bold">156</p>
+                                    <p className="text-xl font-bold">{activity_stats.message_count}</p>
                                 </div>
                             </div>
                         </CardContent>

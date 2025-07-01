@@ -43,13 +43,10 @@ export default function CustomerRegister({ errors = {}, message, referralCode }:
         setLoading(true);
 
         try {
-            router.post('/customer/register', formData as unknown as Record<string, string>, {
+            router.post('/register', formData as unknown as Record<string, string>, {
                 onSuccess: (page) => {
-                    const customer = (page.props as { customer?: Customer }).customer;
-                    if (customer) {
-                        login();
-                        router.visit('/customer/dashboard');
-                    }
+                    // After successful registration, user will be redirected to email verification page
+                    // No need to handle login here since email needs to be verified first
                 },
                 onError: () => {
                     setLoading(false);
@@ -82,7 +79,7 @@ export default function CustomerRegister({ errors = {}, message, referralCode }:
                         <p className="mt-2 text-sm text-gray-600">
                             Hoặc{' '}
                             <Link 
-                                href="/customer/login" 
+                                href="/login" 
                                 className="font-medium text-blue-600 hover:text-blue-500"
                             >
                                 đăng nhập với tài khoản có sẵn
@@ -300,7 +297,7 @@ export default function CustomerRegister({ errors = {}, message, referralCode }:
                                 </div>
 
                                 <div className="mt-6">
-                                    <Link href="/customer/login">
+                                    <Link href="/login">
                                         <Button variant="outline" className="w-full">
                                             Đăng nhập ngay
                                         </Button>

@@ -54,7 +54,7 @@ export default function Analytics({ store, analytics }: AnalyticsPageProps) {
             
             <div className="space-y-6">
                 {/* Header */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-start gap-4">
                     <Link href="/customer/store">
                         <Button variant="ghost" size="sm">
                             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -245,34 +245,7 @@ export default function Analytics({ store, analytics }: AnalyticsPageProps) {
                     </CardContent>
                 </Card>
 
-                {/* Quick Actions */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Hành động nhanh</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Link href={`/customer/store/${store.id}/products`}>
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Package className="h-4 w-4 mr-2" />
-                                    Quản lý sản phẩm
-                                </Button>
-                            </Link>
-                            <Link href={`/customer/store/${store.id}/edit`}>
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Users className="h-4 w-4 mr-2" />
-                                    Chỉnh sửa cửa hàng
-                                </Button>
-                            </Link>
-                            <Link href="/customer/store/product/create">
-                                <Button variant="outline" className="w-full justify-start">
-                                    <Package className="h-4 w-4 mr-2" />
-                                    Thêm sản phẩm mới
-                                </Button>
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
+                
             </div>
         </CustomerLayout>
     );

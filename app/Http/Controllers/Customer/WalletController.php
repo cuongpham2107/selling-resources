@@ -101,9 +101,13 @@ class WalletController extends BaseCustomerController
         // Check minimum withdrawal amount
         $minWithdraw = 50000; // 50k VND
         
+        // Quick amount options for withdrawal
+        $quickAmounts = [50000, 100000, 500000, 1000000];
+        
         return Inertia::render('customer/Wallet/Withdraw', [
             'balance' => $balance,
             'minWithdraw' => $minWithdraw,
+            'quickAmounts' => $quickAmounts,
         ]);
     }
 

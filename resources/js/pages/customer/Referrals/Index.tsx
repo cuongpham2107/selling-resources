@@ -92,7 +92,7 @@ export default function ReferralsIndex({
 
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center">

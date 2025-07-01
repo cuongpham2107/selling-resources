@@ -79,9 +79,9 @@ export default function EditStore({ store, errors = {}, message }: EditStorePage
         <CustomerLayout>
             <Head title="Chỉnh sửa cửa hàng" />
             
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-5xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-start gap-4">
                     <Link href="/customer/store">
                         <Button variant="ghost" size="sm">
                             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -105,9 +105,9 @@ export default function EditStore({ store, errors = {}, message }: EditStorePage
                     </Alert>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className=" grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Basic Information */}
-                    <Card>
+                    <Card className='col-span-1 md:col-span-2'>
                         <CardHeader>
                             <CardTitle>Thông tin cơ bản</CardTitle>
                             <CardDescription>
@@ -154,7 +154,7 @@ export default function EditStore({ store, errors = {}, message }: EditStorePage
                     </Card>
 
                     {/* Store Images */}
-                    <Card>
+                    <Card className='col-span-1 md:col-span-1'>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Image className="h-5 w-5" />
@@ -203,7 +203,7 @@ export default function EditStore({ store, errors = {}, message }: EditStorePage
                     </Card>
 
                     {/* Submit Button */}
-                    <div className="flex justify-end gap-4">
+                    <div className="flex justify-end gap-4 col-span-3">
                         <Link href="/customer/store">
                             <Button type="button" variant="outline">
                                 Hủy bỏ

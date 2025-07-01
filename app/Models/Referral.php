@@ -10,6 +10,7 @@ class Referral extends Model
     protected $fillable = [
         'referrer_id',
         'referred_id',
+        'status',
         'total_points_earned',
         'successful_transactions',
         'first_transaction_at',

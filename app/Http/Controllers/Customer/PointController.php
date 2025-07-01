@@ -95,7 +95,7 @@ class PointController extends BaseCustomerController
             'customer_id' => $this->customer->id,
             'amount' => $pointsAmount,
             'type' => 'exchange_in',
-            'description' => "Exchanged {$vndAmount} VND to {$pointsAmount} points",
+            'description' => "Đã đổi {$vndAmount} VND thành {$pointsAmount} điểm",
         ]);
 
         return redirect()->route('customer.points.index')
@@ -130,7 +130,7 @@ class PointController extends BaseCustomerController
             'customer_id' => $this->customer->id,
             'amount' => -$pointsAmount,
             'type' => 'exchange_out',
-            'description' => "Exchanged {$pointsAmount} points to {$vndAmount} VND",
+            'description' => "Đã đổi {$pointsAmount} điểm thành {$vndAmount} VND",
         ]);
 
         return redirect()->route('customer.points.index')
@@ -146,22 +146,22 @@ class PointController extends BaseCustomerController
         $spendingOptions = [
             [
                 'id' => 'transaction_fee_discount',
-                'name' => 'Transaction Fee Discount',
-                'description' => 'Reduce transaction fees by 50% for next 10 transactions',
+                'name' => 'Giảm phí giao dịch',
+                'description' => 'Giảm 50% phí giao dịch cho 10 giao dịch tiếp theo',
                 'cost' => 100,
                 'type' => 'discount'
             ],
             [
                 'id' => 'priority_support',
-                'name' => 'Priority Support',
-                'description' => 'Get priority customer support for 30 days',
+                'name' => 'Hỗ trợ ưu tiên',
+                'description' => 'Nhận hỗ trợ khách hàng ưu tiên trong 30 ngày',
                 'cost' => 200,
                 'type' => 'service'
             ],
             [
                 'id' => 'featured_listing',
-                'name' => 'Featured Product Listing',
-                'description' => 'Feature your product for 7 days',
+                'name' => 'Đăng tin nổi bật',
+                'description' => 'Đưa sản phẩm của bạn lên trang đầu trong 7 ngày',
                 'cost' => 150,
                 'type' => 'promotion'
             ],
@@ -202,7 +202,7 @@ class PointController extends BaseCustomerController
             'customer_id' => $this->customer->id,
             'amount' => -$validated['cost'],
             'type' => 'spent',
-            'description' => "Spent on: {$validated['option_id']}",
+            'description' => "Đã sử dụng cho: {$validated['option_id']}",
         ]);
 
         // Here you would implement the actual benefit logic
@@ -289,7 +289,7 @@ class PointController extends BaseCustomerController
             'customer_id' => $this->customer->id,
             'amount' => $validated['points'],
             'type' => 'earned',
-            'description' => "Earned from: {$validated['method_id']}",
+            'description' => "Đã kiếm được từ: {$validated['method_id']}",
         ]);
 
         return redirect()->route('customer.points.earn')

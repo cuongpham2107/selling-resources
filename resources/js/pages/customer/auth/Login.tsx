@@ -31,7 +31,7 @@ export default function CustomerLogin({ errors = {}, message }: LoginPageProps) 
         setLoading(true);
 
         try {
-            router.post('/customer/login', formData as unknown as Record<string, string | boolean>, {
+            router.post('/login', formData as unknown as Record<string, string | boolean>, {
                 onSuccess: (page) => {
                     // Assuming the response contains customer data
                     const customer = (page.props as { customer?: Customer }).customer;
@@ -72,7 +72,7 @@ export default function CustomerLogin({ errors = {}, message }: LoginPageProps) 
                         <p className="mt-2 text-sm text-gray-600">
                             Hoặc{' '}
                             <Link 
-                                href="/customer/register" 
+                                href="/register" 
                                 className="font-medium text-blue-600 hover:text-blue-500"
                             >
                                 tạo tài khoản mới
@@ -98,7 +98,19 @@ export default function CustomerLogin({ errors = {}, message }: LoginPageProps) 
                                 <Alert variant="destructive" className="mb-4">
                                     <AlertDescription>
                                         {Object.values(errors).map((error, index) => (
-                                            <div key={index}>{error}</div>
+                                            <div key={index}>
+                                                {error}
+                                                {error.includes('chưa được xác thực') && (
+                                                    <div className="mt-2">
+                                                        <Link 
+                                                            href="/email/verify" 
+                                                            className="text-blue-600 hover:text-blue-500 underline text-sm"
+                                                        >
+                                                            Gửi lại email xác thực
+                                                        </Link>
+                                                    </div>
+                                                )}
+                                            </div>
                                         ))}
                                     </AlertDescription>
                                 </Alert>
@@ -165,13 +177,12 @@ export default function CustomerLogin({ errors = {}, message }: LoginPageProps) 
                                             Ghi nhớ đăng nhập
                                         </Label>
                                     </div>
-                                    {/* TODO: Implement forgot password functionality */}
-                                    {/* <Link 
-                                        href="/customer/forgot-password" 
+                                    <Link 
+                                        href="/forgot-password" 
                                         className="text-sm text-blue-600 hover:text-blue-500"
                                     >
                                         Quên mật khẩu?
-                                    </Link> */}
+                                    </Link>
                                 </div>
 
                                 <Button 
@@ -196,7 +207,7 @@ export default function CustomerLogin({ errors = {}, message }: LoginPageProps) 
                                 </div>
 
                                 <div className="mt-6">
-                                    <Link href="/customer/register">
+                                    <Link href="/register">
                                         <Button variant="outline" className="w-full">
                                             Tạo tài khoản mới
                                         </Button>

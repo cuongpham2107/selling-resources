@@ -116,6 +116,28 @@ class ProfileController extends BaseCustomerController
 
     public function activity(): Response
     {
+        // Calculate real statistics for activity overview
+        $purchaseCount = $this->customer->buyerStoreTransactions()
+            ->where('status', 'completed')
+            ->count() + 
+            $this->customer->buyerTransactions()
+            ->where('status', 'completed')
+            ->count();
+
+        $topupCount = $this->customer->walletTransactions()
+            ->where('type', 'topup')
+            ->where('status', 'completed')
+            ->count();
+
+        $paymentCount = $this->customer->walletTransactions()
+            ->whereIn('type', ['payment', 'transfer_out'])
+            ->where('status', 'completed')
+            ->count();
+
+        // Get message count from chat tables
+        $messageCount = $this->customer->chats()->count() + 
+                       $this->customer->generalChats()->count();
+
         // Get recent transactions and activities from database
         $recentIntermediateTransactions = $this->customer->buyerTransactions()
             ->latest()
@@ -146,10 +168,10 @@ class ProfileController extends BaseCustomerController
             $activities->push([
                 'id' => 'wallet_' . $transaction->id,
                 'type' => 'payment',
-                'title' => $this->getWalletActivityTitle($transaction->type->value),
+                'title' => $this->getWalletActivityTitle($transaction->type),
                 'description' => $transaction->description ?? 'Giao dịch ví điện tử',
                 'amount' => $transaction->amount,
-                'status' => $transaction->status->value,
+                'status' => $transaction->status,
                 'created_at' => $transaction->created_at->toISOString(),
             ]);
         });
@@ -175,7 +197,7 @@ class ProfileController extends BaseCustomerController
                 'title' => 'Mua sản phẩm từ cửa hàng',
                 'description' => 'Mua sản phẩm "' . ($transaction->product->name ?? 'N/A') . '"',
                 'amount' => $transaction->amount,
-                'status' => $transaction->status->value,
+                'status' => $transaction->status,
                 'created_at' => $transaction->created_at->toISOString(),
             ]);
         });
@@ -210,8 +232,16 @@ class ProfileController extends BaseCustomerController
             ],
         ];
 
+        $activityStats = [
+            'purchase_count' => $purchaseCount,
+            'topup_count' => $topupCount,
+            'payment_count' => $paymentCount,
+            'message_count' => $messageCount,
+        ];
+
         return Inertia::render('customer/Profile/Activity', [
             'activities' => $activitiesData,
+            'activity_stats' => $activityStats,
         ]);
     }
 
@@ -533,7 +563,7 @@ class ProfileController extends BaseCustomerController
                 'activity' => 'Xác thực email',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->email_verified_at->toISOString(),
+                'created_at' => \Carbon\Carbon::parse($this->customer->email_verified_at)->toISOString(),
                 'is_suspicious' => false,
             ]);
         }
@@ -545,7 +575,7 @@ class ProfileController extends BaseCustomerController
                 'activity' => 'Xác thực KYC',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->kyc_verified_at->toISOString(),
+                'created_at' => \Carbon\Carbon::parse($this->customer->kyc_verified_at)->toISOString(),
                 'is_suspicious' => false,
             ]);
         }
@@ -576,14 +606,14 @@ class ProfileController extends BaseCustomerController
             ->get();
 
         $recentWalletActivities->each(function ($transaction) use ($securityActivities) {
-            $activityName = $transaction->type->value === 'topup' ? 'Nạp tiền vào ví' : 'Rút tiền từ ví';
+            $activityName = $transaction->type === 'topup' ? 'Nạp tiền vào ví' : 'Rút tiền từ ví';
             $securityActivities->push([
                 'id' => 'wallet_' . $transaction->id,
                 'activity' => $activityName,
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
                 'created_at' => $transaction->created_at->toISOString(),
-                'is_suspicious' => $transaction->type->value === 'withdraw' && $transaction->amount > 2000000, // Large withdrawals might be suspicious
+                'is_suspicious' => $transaction->type === 'withdraw' && $transaction->amount > 2000000, // Large withdrawals might be suspicious
             ]);
         });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { Flag, Plus, Search, Filter, Eye, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, History, Search, Filter, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,9 +10,43 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { formatVND } from '@/lib/currency';
 import { formatDate } from '@/lib/date';
-import type { Dispute } from '@/types';
 
-interface DisputesIndexPageProps {
+interface Transaction {
+    id: number;
+    amount: number;
+    created_at: string;
+    product?: {
+        id: number;
+        name: string;
+    };
+}
+
+interface Customer {
+    id: number;
+    username: string;
+}
+
+interface User {
+    id: number;
+    name: string;
+}
+
+interface Dispute {
+    id: number;
+    transaction_type: string;
+    transaction_id: number;
+    created_by: number;
+    reason: string;
+    status: string;
+    result?: string;
+    resolved_at?: string;
+    created_at: string;
+    transaction?: Transaction;
+    creator?: Customer;
+    assignedTo?: User;
+}
+
+interface DisputeHistoryPageProps {
     disputes: {
         data: Dispute[];
         current_page: number;
@@ -28,16 +62,6 @@ interface DisputesIndexPageProps {
 }
 
 const statusConfig = {
-    pending: { 
-        label: 'Đang chờ', 
-        color: 'orange', 
-        icon: Clock 
-    },
-    processing: { 
-        label: 'Đang xử lý', 
-        color: 'blue', 
-        icon: AlertTriangle 
-    },
     resolved: { 
         label: 'Đã giải quyết', 
         color: 'green', 
@@ -56,7 +80,7 @@ const resultConfig = {
     partial_refund: { label: 'Hoàn tiền một phần', color: 'purple' },
 };
 
-export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexPageProps) {
+export default function DisputeHistory({ disputes, filters = {} }: DisputeHistoryPageProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
     const [resultFilter, setResultFilter] = useState(filters.result || 'all');
@@ -67,7 +91,7 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
         if (statusFilter && statusFilter !== 'all') searchParams.set('status', statusFilter);
         if (resultFilter && resultFilter !== 'all') searchParams.set('result', resultFilter);
         
-        window.location.href = `/customer/disputes?${searchParams.toString()}`;
+        window.location.href = `/customer/disputes/history?${searchParams.toString()}`;
     };
 
     const getStatusBadge = (status: string) => {
@@ -94,78 +118,39 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
         );
     };
 
+    const resolvedCount = disputes.data.filter(d => d.status === 'resolved').length;
+    const cancelledCount = disputes.data.filter(d => d.status === 'cancelled').length;
+
     return (
         <CustomerLayout>
-            <Head title="Tranh chấp" />
+            <Head title="Lịch sử tranh chấp" />
             
             <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Tranh chấp</h1>
-                        <p className="text-gray-600">Quản lý các tranh chấp giao dịch</p>
-                    </div>
-                    <div className="flex space-x-2">
-                        <Link href="/customer/disputes/history">
-                            <Button variant="outline">
-                                <Clock className="w-4 h-4 mr-2" />
-                                Lịch sử
+                    <div className="flex flex-col items-start space-y-4">
+                        <Link href="/customer/disputes">
+                            <Button variant="outline" size="sm">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Quay lại
                             </Button>
                         </Link>
-                        <Link href="/customer/disputes/guidelines">
-                            <Button variant="outline">
-                                <Flag className="w-4 h-4 mr-2" />
-                                Hướng dẫn
-                            </Button>
-                        </Link>
-                        <Link href="/customer/disputes/create">
-                            <Button>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Tạo tranh chấp mới
-                            </Button>
-                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Lịch sử tranh chấp</h1>
+                            <p className="text-gray-600">Xem các tranh chấp đã được giải quyết hoặc hủy</p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center space-x-2">
-                                <Clock className="w-8 h-8 text-orange-500" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Đang chờ</p>
-                                    <p className="text-xl font-bold">
-                                        {disputes.data.filter(d => d.status === 'pending').length}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center space-x-2">
-                                <AlertTriangle className="w-8 h-8 text-blue-500" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Đang xử lý</p>
-                                    <p className="text-xl font-bold">
-                                        {disputes.data.filter(d => d.status === 'processing').length}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center space-x-2">
                                 <CheckCircle className="w-8 h-8 text-green-500" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Đã giải quyết</p>
-                                    <p className="text-xl font-bold">
-                                        {disputes.data.filter(d => d.status === 'resolved').length}
-                                    </p>
+                                    <p className="text-xl font-bold">{resolvedCount}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -174,7 +159,19 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center space-x-2">
-                                <Flag className="w-8 h-8 text-purple-500" />
+                                <XCircle className="w-8 h-8 text-red-500" />
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">Đã hủy</p>
+                                    <p className="text-xl font-bold">{cancelledCount}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center space-x-2">
+                                <History className="w-8 h-8 text-blue-500" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Tổng số</p>
                                     <p className="text-xl font-bold">{disputes.total}</p>
@@ -209,8 +206,6 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                        <SelectItem value="pending">Đang chờ</SelectItem>
-                                        <SelectItem value="processing">Đang xử lý</SelectItem>
                                         <SelectItem value="resolved">Đã giải quyết</SelectItem>
                                         <SelectItem value="cancelled">Đã hủy</SelectItem>
                                     </SelectContent>
@@ -239,19 +234,19 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                     </CardContent>
                 </Card>
 
-                {/* Disputes Table */}
+                {/* History Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Danh sách tranh chấp</CardTitle>
+                        <CardTitle>Lịch sử tranh chấp</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {disputes.data.length === 0 ? (
                             <div className="text-center py-8">
-                                <Flag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có tranh chấp nào</h3>
-                                <p className="text-gray-600 mb-4">Tranh chấp sẽ hiển thị ở đây khi bạn tạo</p>
-                                <Link href="/customer/disputes/create">
-                                    <Button>Tạo tranh chấp mới</Button>
+                                <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có lịch sử tranh chấp</h3>
+                                <p className="text-gray-600 mb-4">Các tranh chấp đã hoàn thành sẽ hiển thị ở đây</p>
+                                <Link href="/customer/disputes">
+                                    <Button>Quay lại danh sách tranh chấp</Button>
                                 </Link>
                             </div>
                         ) : (
@@ -261,11 +256,11 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                         <TableRow>
                                             <TableHead>ID</TableHead>
                                             <TableHead>Giao dịch</TableHead>
-                                            <TableHead>Lý do</TableHead>
+                                            <TableHead>Sản phẩm</TableHead>
                                             <TableHead>Số tiền</TableHead>
                                             <TableHead>Trạng thái</TableHead>
                                             <TableHead>Kết quả</TableHead>
-                                            <TableHead>Ngày tạo</TableHead>
+                                            <TableHead>Ngày giải quyết</TableHead>
                                             <TableHead className="text-right">Thao tác</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -276,11 +271,11 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                                     #{dispute.id}
                                                 </TableCell>
                                                 <TableCell>
-                                                    #{dispute.transaction?.id || 'N/A'}
+                                                    #{dispute.transaction?.id || dispute.transaction_id}
                                                 </TableCell>
                                                 <TableCell className="max-w-xs">
-                                                    <p className="truncate" title={dispute.reason}>
-                                                        {dispute.reason}
+                                                    <p className="truncate" title={dispute.transaction?.product?.name}>
+                                                        {dispute.transaction?.product?.name || 'N/A'}
                                                     </p>
                                                 </TableCell>
                                                 <TableCell className="font-semibold">
@@ -296,7 +291,7 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                                     {dispute.result ? getResultBadge(dispute.result) : '-'}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {formatDate(dispute.created_at)}
+                                                    {dispute.resolved_at ? formatDate(dispute.resolved_at) : '-'}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <Link href={`/customer/disputes/${dispute.id}`}>
@@ -321,7 +316,7 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                 </p>
                                 <div className="flex space-x-2">
                                     {disputes.current_page > 1 && (
-                                        <Link href={`/customer/disputes?page=${disputes.current_page - 1}`}>
+                                        <Link href={`/customer/disputes/history?page=${disputes.current_page - 1}`}>
                                             <Button variant="outline" size="sm">
                                                 Trước
                                             </Button>
@@ -331,7 +326,7 @@ export default function DisputesIndex({ disputes, filters = {} }: DisputesIndexP
                                         Trang {disputes.current_page} / {disputes.last_page}
                                     </span>
                                     {disputes.current_page < disputes.last_page && (
-                                        <Link href={`/customer/disputes?page=${disputes.current_page + 1}`}>
+                                        <Link href={`/customer/disputes/history?page=${disputes.current_page + 1}`}>
                                             <Button variant="outline" size="sm">
                                                 Sau
                                             </Button>

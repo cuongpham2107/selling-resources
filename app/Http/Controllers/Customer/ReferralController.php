@@ -38,18 +38,20 @@ class ReferralController extends BaseCustomerController
             ->sum('amount');
 
         return Inertia::render('customer/Referrals/Index', [
-            'referralCode' => $referralCode,
-            'referrals' => $referrals,
-            'stats' => [
+            'referral_code' => $referralCode,
+            'referral_url' => url("/register?ref={$referralCode}"),
+            'referral_stats' => [
                 'total_referrals' => $totalReferrals,
                 'active_referrals' => $activeReferrals,
                 'total_earnings' => $totalEarnings,
+                'pending_earnings' => 0, // You may want to calculate this
             ],
-            'bonusStructure' => [
-                'signup_bonus' => 50, // Points for successful referral
-                'purchase_bonus' => 100, // Points when referred user makes first purchase
-                'commission_rate' => 5, // 5% commission on referred user's transactions
-            ],
+            'referred_customers' => $referrals,
+            'referral_earnings' => PointTransaction::where('customer_id', $this->customer->id)
+                ->where('type', 'referral_bonus')
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get(),
         ]);
     }
 
@@ -63,9 +65,9 @@ class ReferralController extends BaseCustomerController
             'referralCode' => $referralCode,
             'referralLink' => $referralLink,
             'shareMessages' => [
-                'Join this amazing marketplace using my referral code: ' . $referralCode,
-                'Start selling and buying digital products! Use code: ' . $referralCode,
-                'Get started with exclusive bonuses: ' . $referralLink,
+                'Tham gia marketplace tuyệt vời này bằng mã giới thiệu của tôi: ' . $referralCode,
+                'Bắt đầu bán và mua sản phẩm số! Sử dụng mã: ' . $referralCode,
+                'Bắt đầu với các ưu đãi độc quyền: ' . $referralLink,
             ],
         ]);
     }
@@ -113,28 +115,28 @@ class ReferralController extends BaseCustomerController
         return Inertia::render('customer/Referrals/Program', [
             'programDetails' => [
                 'how_it_works' => [
-                    '1. Share your unique referral code with friends',
-                    '2. They sign up using your code',
-                    '3. You earn 50 points when they complete registration',
-                    '4. Earn 100 bonus points when they make their first purchase',
-                    '5. Get 5% commission on all their future transactions',
+                    '1. Chia sẻ mã giới thiệu độc quyền của bạn với bạn bè',
+                    '2. Họ đăng ký bằng mã của bạn',
+                    '3. Bạn kiếm được 50 điểm khi họ hoàn thành đăng ký',
+                    '4. Kiếm thêm 100 điểm thưởng khi họ mua hàng lần đầu',
+                    '5. Nhận 5% hoa hồng từ tất cả giao dịch tương lai của họ',
                 ],
                 'earning_structure' => [
-                    'Registration Bonus' => '50 points per successful referral',
-                    'First Purchase Bonus' => '100 points when referred user makes first purchase',
-                    'Ongoing Commission' => '5% of referred user\'s transaction fees',
-                    'Monthly Bonus' => 'Extra 200 points for 10+ active referrals',
+                    'Thưởng Đăng Ký' => '50 điểm cho mỗi giới thiệu thành công',
+                    'Thưởng Mua Hàng Đầu Tiên' => '100 điểm khi người được giới thiệu mua hàng lần đầu',
+                    'Hoa Hồng Liên Tục' => '5% phí giao dịch của người được giới thiệu',
+                    'Thưởng Hàng Tháng' => 'Thêm 200 điểm cho 10+ giới thiệu hoạt động',
                 ],
                 'requirements' => [
-                    'Referred user must be new to the platform',
-                    'Referred user must complete account verification',
-                    'Commission is paid monthly',
-                    'Account must remain in good standing',
+                    'Người được giới thiệu phải là người mới trên nền tảng',
+                    'Người được giới thiệu phải hoàn thành xác minh tài khoản',
+                    'Hoa hồng được trả hàng tháng',
+                    'Tài khoản phải duy trì uy tín tốt',
                 ],
                 'limits' => [
-                    'Maximum 100 referrals per month',
-                    'Commission cap: 10,000 points per month',
-                    'Referral code must be used within 30 days',
+                    'Tối đa 100 giới thiệu mỗi tháng',
+                    'Giới hạn hoa hồng: 10,000 điểm mỗi tháng',
+                    'Mã giới thiệu phải được sử dụng trong vòng 30 ngày',
                 ],
             ],
         ]);

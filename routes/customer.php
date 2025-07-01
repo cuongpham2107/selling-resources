@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Customer\Auth\AuthenticatedCustomerController;
 use App\Http\Controllers\Customer\Auth\RegisteredCustomerController;
+use App\Http\Controllers\Customer\Auth\EmailVerificationController;
+use App\Http\Controllers\Customer\Auth\PasswordResetController;
 use App\Http\Controllers\Customer\GeneralChatController;
 use App\Http\Controllers\Customer\TransactionChatController;
 use App\Http\Controllers\Customer\DashboardController;
@@ -22,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 // Guest routes - redirect to dashboard if already authenticated
-Route::prefix('customer')->name('customer.')->middleware('customer.guest')->group(function () {
+Route::prefix('/')->name('customer.')->middleware('customer.guest')->group(function () {
     Route::get('register', [RegisteredCustomerController::class, 'create'])
         ->name('register');
     Route::post('register', [RegisteredCustomerController::class, 'store']);
@@ -30,10 +32,34 @@ Route::prefix('customer')->name('customer.')->middleware('customer.guest')->grou
     Route::get('login', [AuthenticatedCustomerController::class, 'create'])
         ->name('login');
     Route::post('login', [AuthenticatedCustomerController::class, 'store']);
+
+    // Password Reset Routes
+    Route::get('forgot-password', [PasswordResetController::class, 'create'])
+        ->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'store'])
+        ->name('password.email');
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'edit'])
+        ->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'update'])
+        ->name('password.update');
+});
+
+// Email verification routes
+Route::prefix('/')->name('customer.')->group(function () {
+    Route::get('email/verify', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+    
+    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('throttle:6,1')
+        ->name('verification.verify');
+    
+    Route::post('email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 });
 
 // Authenticated customer routes - redirect to login if not authenticated
-Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group(function () {
+Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'customer.verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
     
@@ -150,6 +176,12 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
     // Referrals
     Route::prefix('referrals')->name('referrals.')->group(function () {
         Route::get('/', [ReferralController::class, 'index'])->name('index');
+        Route::get('share', [ReferralController::class, 'share'])->name('share');
+        Route::post('regenerate', [ReferralController::class, 'regenerateCode'])->name('regenerate');
+        Route::get('earnings', [ReferralController::class, 'earnings'])->name('earnings');
+        Route::get('program', [ReferralController::class, 'program'])->name('program');
+        Route::get('leaderboard', [ReferralController::class, 'leaderboard'])->name('leaderboard');
+        Route::get('track', [ReferralController::class, 'track'])->name('track');
     });
 
     // Disputes
@@ -157,7 +189,13 @@ Route::prefix('customer')->name('customer.')->middleware('customer.auth')->group
         Route::get('/', [DisputeController::class, 'index'])->name('index');
         Route::get('create', [DisputeController::class, 'create'])->name('create');
         Route::post('/', [DisputeController::class, 'store'])->name('store');
+        Route::get('history', [DisputeController::class, 'history'])->name('history');
+        Route::get('guidelines', [DisputeController::class, 'guidelines'])->name('guidelines');
         Route::get('{dispute}', [DisputeController::class, 'show'])->name('show');
+        Route::post('{dispute}/respond', [DisputeController::class, 'respond'])->name('respond');
+        Route::post('{dispute}/cancel', [DisputeController::class, 'cancel'])->name('cancel');
+        Route::post('{dispute}/escalate', [DisputeController::class, 'escalate'])->name('escalate');
+        Route::get('{dispute}/evidence/{fileIndex}', [DisputeController::class, 'downloadEvidence'])->name('evidence.download');
     });
 
     // Profile & Settings
