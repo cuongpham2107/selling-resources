@@ -79,7 +79,7 @@ export default function MarketplaceIndex({ products, stats, popularStores, filte
         <CustomerLayout>
             <Head title="Marketplace - Khám phá sản phẩm" />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-8">
                     <div className="max-w-4xl mx-auto text-center">

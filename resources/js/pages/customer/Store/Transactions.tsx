@@ -1,16 +1,14 @@
 import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatVND } from '@/lib/currency';
 import { formatDate } from '@/lib/date';
 import {
     Package,
-    Store,
     Eye,
-    User,
     ShoppingCart,
     DollarSign,
     Clock
@@ -84,7 +82,7 @@ export default function StoreTransactions({ transactions, currentUser }: Props) 
 
     return (
         <CustomerLayout title="Giao dịch cửa hàng">
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>

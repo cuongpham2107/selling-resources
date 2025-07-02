@@ -219,7 +219,4 @@ Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'cust
         Route::post('two-factor-recovery-codes', [ProfileController::class, 'regenerateTwoFactorRecoveryCodes'])->name('two-factor.recovery-codes.regenerate');
     });
     
-    Route::get('settings', [SettingsController::class, 'index'])->name('settings');
-    Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
-    
 });

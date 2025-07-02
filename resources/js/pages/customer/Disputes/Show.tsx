@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { formatVND } from '@/lib/currency';
@@ -138,10 +137,10 @@ export default function ShowDispute({ dispute, isCreator }: ShowDisputePageProps
         <CustomerLayout>
             <Head title={`Tranh chấp #${dispute.id}`} />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/disputes">
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />

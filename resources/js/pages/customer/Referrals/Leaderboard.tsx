@@ -74,7 +74,7 @@ export default function ReferralsLeaderboard({ topReferrers, currentRank, curren
         <CustomerLayout>
             <Head title="Bảng xếp hạng giới thiệu" />
 
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>

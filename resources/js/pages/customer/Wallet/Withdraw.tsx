@@ -61,7 +61,7 @@ export default function Withdraw({ balance, minWithdraw, quickAmounts }: Props) 
         <CustomerLayout>
             <Head title="Rút Tiền" />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col items-start space-y-4">

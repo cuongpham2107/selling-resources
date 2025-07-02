@@ -30,7 +30,7 @@ interface ActivityItem {
 }
 
 interface ProfileActivityPageProps {
-    customer: Customer;
+    customer?: Customer;
     activities: {
         data: ActivityItem[];
         meta: {
@@ -40,7 +40,7 @@ interface ProfileActivityPageProps {
             total: number;
         };
     };
-    activity_stats: {
+    activity_stats?: {
         purchase_count: number;
         topup_count: number;
         payment_count: number;
@@ -107,7 +107,7 @@ export default function ProfileActivity({ activities, activity_stats }: ProfileA
 
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col items-start space-y-4">
@@ -149,7 +149,7 @@ export default function ProfileActivity({ activities, activity_stats }: ProfileA
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Giao dịch mua</p>
-                                    <p className="text-xl font-bold">{activity_stats.purchase_count}</p>
+                                    <p className="text-xl font-bold">{activity_stats?.purchase_count ?? 0}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -162,7 +162,7 @@ export default function ProfileActivity({ activities, activity_stats }: ProfileA
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Nạp tiền</p>
-                                    <p className="text-xl font-bold">{activity_stats.topup_count}</p>
+                                    <p className="text-xl font-bold">{activity_stats?.topup_count ?? 0}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -175,7 +175,7 @@ export default function ProfileActivity({ activities, activity_stats }: ProfileA
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Thanh toán</p>
-                                    <p className="text-xl font-bold">{activity_stats.payment_count}</p>
+                                    <p className="text-xl font-bold">{activity_stats?.payment_count ?? 0}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -188,7 +188,7 @@ export default function ProfileActivity({ activities, activity_stats }: ProfileA
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Tin nhắn</p>
-                                    <p className="text-xl font-bold">{activity_stats.message_count}</p>
+                                    <p className="text-xl font-bold">{activity_stats?.message_count ?? 0}</p>
                                 </div>
                             </div>
                         </CardContent>

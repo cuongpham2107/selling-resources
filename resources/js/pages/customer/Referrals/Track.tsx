@@ -14,9 +14,8 @@ import {
     Coins,
     Target,
     Download,
-    Filter,
-    ArrowUpRight,
-    ArrowDownRight
+    // ArrowUpRight,
+    // ArrowDownRight
 } from 'lucide-react';
 
 interface Referral {
@@ -95,20 +94,20 @@ export default function ReferralsTrack({ period, referralsInPeriod, earningsInPe
         }
     };
 
-    const getTrendIcon = (current: number, previous: number) => {
-        if (current > previous) {
-            return <ArrowUpRight className="h-4 w-4 text-green-600" />;
-        } else if (current < previous) {
-            return <ArrowDownRight className="h-4 w-4 text-red-600" />;
-        }
-        return null;
-    };
+    // const getTrendIcon = (current: number, previous: number) => {
+    //     if (current > previous) {
+    //         return <ArrowUpRight className="h-4 w-4 text-green-600" />;
+    //     } else if (current < previous) {
+    //         return <ArrowDownRight className="h-4 w-4 text-red-600" />;
+    //     }
+    //     return null;
+    // };
 
     return (
         <CustomerLayout>
             <Head title="Theo dõi hiệu suất giới thiệu" />
 
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>

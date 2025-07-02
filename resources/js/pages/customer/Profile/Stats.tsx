@@ -56,7 +56,7 @@ interface StatsData {
 }
 
 interface ProfileStatsPageProps {
-    customer: Customer;
+    customer?: Customer;
     stats: StatsData;
 }
 
@@ -195,7 +195,7 @@ export default function ProfileStats({ customer, stats }: ProfileStatsPageProps)
                                         <div>
                                             <p className="text-sm font-medium text-gray-600">Thời gian tham gia</p>
                                             <p className="text-xl font-bold text-gray-900">
-                                                {getRelativeTime(customer.created_at)}
+                                                {customer?.created_at ? getRelativeTime(customer.created_at) : 'N/A'}
                                             </p>
                                         </div>
                                     </div>

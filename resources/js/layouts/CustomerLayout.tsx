@@ -18,13 +18,13 @@ export default function CustomerLayout({
     showSidebar = true
 }: CustomerLayoutProps) {
     const { customer } = useCustomerAuth();
-    
+    console.log('CustomerLayout', { customer });
     
     return (
         <SidebarProvider>
             <Head title={title} />
             
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
                 <CustomerNavbar />
                 
                 <div className="flex">
@@ -33,8 +33,27 @@ export default function CustomerLayout({
                         <CustomerSidebar customer={customer} />
                     )}
                     
-                    <main className={`flex-1 ${showSidebar ? 'lg:ml-64' : ''} pt-16`}>
-                        <div className="container mx-auto px-4 py-6">
+                    <main className={`
+                        flex-1 
+                        ${showSidebar ? 'lg:ml-64' : ''} 
+                        pt-16 
+                        transition-all 
+                        duration-300 
+                        ease-in-out
+                        min-h-[calc(100vh-4rem)]
+                    `}>
+                        <div className="
+                            container 
+                            mx-auto 
+                            px-3 
+                            sm:px-4 
+                            lg:px-6 
+                            xl:px-8 
+                            py-4 
+                            sm:py-6 
+                            lg:py-8
+                            max-w-full
+                        ">
                             {children}
                         </div>
                     </main>

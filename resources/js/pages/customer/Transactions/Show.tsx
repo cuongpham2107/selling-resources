@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Flag, FileText, Download, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Flag, Download, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -439,31 +439,6 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {/* Evidence */}
-                        {transaction.evidence && transaction.evidence.length > 0 && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                        <FileText className="w-5 h-5 mr-2" />
-                                        Bằng chứng giao dịch
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-2">
-                                        {transaction.evidence.map((evidence, index) => (
-                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                <span className="font-medium">Tệp bằng chứng {index + 1}</span>
-                                                <Button variant="outline" size="sm">
-                                                    <Download className="w-4 h-4 mr-2" />
-                                                    Tải xuống
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
                     </div>
 
                     {/* Sidebar */}

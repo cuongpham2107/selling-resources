@@ -33,7 +33,7 @@ export default function ProductsIndex({ store, products }: Props) {
         <CustomerLayout>
             <Head title="My Products" />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>

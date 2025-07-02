@@ -58,10 +58,10 @@ export default function ProfileEdit({ customer }: ProfileEditPageProps) {
 
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/profile">
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />

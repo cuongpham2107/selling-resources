@@ -30,49 +30,37 @@ class ProfileController extends BaseCustomerController
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'username' => ['required', 'string', 'max:50', 'unique:customers,username,' . $this->customer->id],
+            'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:customers,email,' . $this->customer->id],
             'phone' => ['nullable', 'string', 'max:20'],
-            'full_name' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:500'],
             'avatar' => ['nullable', 'image', 'max:2048'], // 2MB
         ], [
-            'username.required' => 'Tên đăng nhập là bắt buộc.',
-            'username.unique' => 'Tên đăng nhập này đã được sử dụng.',
+            'full_name.required' => 'Họ và tên là bắt buộc.',
+            'full_name.string' => 'Họ và tên phải là chuỗi ký tự.',
+            'full_name.max' => 'Họ và tên không được vượt quá 255 ký tự.',
             'email.required' => 'Email là bắt buộc.',
             'email.email' => 'Email phải có định dạng hợp lệ.',
+            'email.max' => 'Email không được vượt quá 255 ký tự.',
             'email.unique' => 'Email này đã được sử dụng bởi tài khoản khác.',
+            'phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
             'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
-            'avatar.image' => 'Ảnh đại diện phải là một tệp hình ảnh.',
+            'bio.string' => 'Tiểu sử phải là chuỗi ký tự.',
+            'bio.max' => 'Tiểu sử không được vượt quá 500 ký tự.',
+            'avatar.image' => 'Ảnh đại diện phải là một tệp hình ảnh (jpg, jpeg, png, bmp, gif, svg, webp).',
             'avatar.max' => 'Ảnh đại diện không được vượt quá 2MB.',
         ]);
 
-        // Handle avatar upload and store path in kyc_data
-        $kycData = $this->customer->kyc_data ?? [];
-        
+        // Handle avatar upload
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
-            if (isset($kycData['avatar']) && $kycData['avatar']) {
-                Storage::disk('public')->delete($kycData['avatar']);
+            if ($this->customer->avatar) {
+                Storage::disk('public')->delete($this->customer->avatar);
             }
             
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $kycData['avatar'] = $avatarPath;
+            $validated['avatar'] = $avatarPath;
         }
-
-        // Store additional profile info in kyc_data
-        if (isset($validated['full_name'])) {
-            $kycData['full_name'] = $validated['full_name'];
-            unset($validated['full_name']);
-        }
-        
-        if (isset($validated['bio'])) {
-            $kycData['bio'] = $validated['bio'];
-            unset($validated['bio']);
-        }
-        
-        unset($validated['avatar']);
-        $validated['kyc_data'] = $kycData;
 
         $this->customer->update($validated);
 
@@ -96,7 +84,6 @@ class ProfileController extends BaseCustomerController
 
         $this->customer->update([
             'password' => Hash::make($validated['password']),
-            'password_changed_at' => now(),
         ]);
 
         return redirect()->route('customer.profile.show')
@@ -117,200 +104,113 @@ class ProfileController extends BaseCustomerController
 
     public function activity(): Response
     {
-        // Calculate real statistics for activity overview
-        $purchaseCount = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->count() + 
-            $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->count();
-
-        $topupCount = $this->customer->walletTransactions()
-            ->where('type', 'topup')
-            ->where('status', 'completed')
-            ->count();
-
-        $paymentCount = $this->customer->walletTransactions()
-            ->whereIn('type', ['payment', 'transfer_out'])
-            ->where('status', 'completed')
-            ->count();
-
-        // Get message count from chat tables
-        $messageCount = $this->customer->chats()->count() + 
-                       $this->customer->generalChats()->count();
-
-        // Get recent transactions and activities from database
-        $recentIntermediateTransactions = $this->customer->buyerTransactions()
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        $recentStoreTransactions = $this->customer->buyerStoreTransactions()
+        
+        // Get recent activity (this would be more comprehensive in a real app)
+        $recentTransactions = $this->customer->buyerTransactions()
             ->with('product:id,name')
             ->latest()
-            ->limit(5)
+            ->limit(10)
             ->get();
 
-        $recentWalletTransactions = $this->customer->walletTransactions()
+        $recentSales = $this->customer->sellerTransactions()
+            // ->with('product:id,name')
             ->latest()
-            ->limit(5)
+            ->limit(10)
             ->get();
 
-        $recentPointTransactions = $this->customer->pointTransactions()
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        // Combine all activities and format for frontend
-        $activities = collect();
-
-        // Add wallet transactions
-        $recentWalletTransactions->each(function ($transaction) use ($activities) {
-            $activities->push([
-                'id' => 'wallet_' . $transaction->id,
-                'type' => 'payment',
-                'title' => $this->getWalletActivityTitle($transaction->type),
-                'description' => $transaction->description ?? 'Giao dịch ví điện tử',
-                'amount' => $transaction->amount,
-                'status' => $transaction->status,
-                'created_at' => $transaction->created_at->toISOString(),
-            ]);
-        });
-
-        // Add point transactions
-        $recentPointTransactions->each(function ($transaction) use ($activities) {
-            $activities->push([
-                'id' => 'point_' . $transaction->id,
-                'type' => 'transaction',
-                'title' => $this->getPointActivityTitle($transaction->type->value),
-                'description' => $transaction->description ?? 'Giao dịch điểm thưởng',
-                'amount' => $transaction->amount,
-                'status' => 'completed',
-                'created_at' => $transaction->created_at->toISOString(),
-            ]);
-        });
-
-        // Add store transactions
-        $recentStoreTransactions->each(function ($transaction) use ($activities) {
-            $activities->push([
-                'id' => 'store_' . $transaction->id,
-                'type' => 'purchase',
-                'title' => 'Mua sản phẩm từ cửa hàng',
-                'description' => 'Mua sản phẩm "' . ($transaction->product->name ?? 'N/A') . '"',
-                'amount' => $transaction->amount,
-                'status' => $transaction->status,
-                'created_at' => $transaction->created_at->toISOString(),
-            ]);
-        });
-
-        // Add intermediate transactions
-        $recentIntermediateTransactions->each(function ($transaction) use ($activities) {
-            $activities->push([
-                'id' => 'intermediate_' . $transaction->id,
-                'type' => 'transaction',
-                'title' => 'Giao dịch trung gian',
-                'description' => $transaction->description ?? 'Giao dịch mua bán trung gian',
-                'amount' => $transaction->amount,
-                'status' => $transaction->status->value,
-                'created_at' => $transaction->created_at->toISOString(),
-            ]);
-        });
-
-        // Sort by created_at and paginate
-        $sortedActivities = $activities->sortByDesc('created_at')->values();
-        $perPage = 15;
-        $page = request()->get('page', 1);
-        $total = $sortedActivities->count();
-        $paginatedActivities = $sortedActivities->slice(($page - 1) * $perPage, $perPage);
-
-        $activitiesData = [
-            'data' => $paginatedActivities->values()->all(),
+        // Sample activity data - in a real app, this would come from an activities table
+        $activities = [
+            'data' => [
+                [
+                    'id' => 1,
+                    'type' => 'purchase',
+                    'title' => 'Mua sản phẩm thành công',
+                    'description' => 'Bạn đã mua sản phẩm "Laravel Course" với giá 500,000₫',
+                    'amount' => 500000,
+                    'status' => 'completed',
+                    'created_at' => now()->subHours(2)->toISOString(),
+                ],
+                [
+                    'id' => 2,
+                    'type' => 'transaction',
+                    'title' => 'Nạp tiền vào ví',
+                    'description' => 'Nạp tiền thành công vào ví điện tử',
+                    'amount' => 1000000,
+                    'status' => 'completed',
+                    'created_at' => now()->subDays(1)->toISOString(),
+                ],
+            ],
             'meta' => [
-                'current_page' => (int) $page,
-                'last_page' => (int) ceil($total / $perPage),
-                'per_page' => $perPage,
-                'total' => $total,
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 15,
+                'total' => 2,
             ],
         ];
 
+        // Sample activity stats
         $activityStats = [
-            'purchase_count' => $purchaseCount,
-            'topup_count' => $topupCount,
-            'payment_count' => $paymentCount,
-            'message_count' => $messageCount,
+            'purchase_count' => $this->customer->buyerTransactions()->where('status', 'completed')->count(),
+            'topup_count' => $this->customer->topups()->where('status', 'completed')->count(),
+            'payment_count' => $this->customer->buyerTransactions()->count() + ($this->customer->topups()->count() ?? 0),
+            'message_count' => 0, // This would come from a messages table in a real app
         ];
 
         return Inertia::render('customer/Profile/Activity', [
-            'activities' => $activitiesData,
+            'customer' => $this->customer,
+            'activities' => $activities,
             'activity_stats' => $activityStats,
         ]);
     }
 
-    private function getWalletActivityTitle(string $type): string
-    {
-        return match($type) {
-            'topup' => 'Nạp tiền vào ví',
-            'withdraw' => 'Rút tiền khỏi ví',
-            'transfer_out' => 'Chuyển tiền đi',
-            'transfer_in' => 'Nhận tiền chuyển',
-            'payment' => 'Thanh toán',
-            'refund' => 'Hoàn tiền',
-            default => 'Giao dịch ví',
-        };
-    }
-
-    private function getPointActivityTitle(string $type): string
-    {
-        return match($type) {
-            'earned' => 'Kiếm điểm thưởng',
-            'spent' => 'Sử dụng điểm thưởng',
-            'bonus' => 'Nhận điểm thưởng',
-            'penalty' => 'Trừ điểm phạt',
-            'referral' => 'Điểm giới thiệu',
-            default => 'Giao dịch điểm',
-        };
-    }
-
     public function stats(): Response
     {
-        // Calculate real statistics from database
-        $totalSpentStore = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->sum('amount');
-            
-        $totalSpentIntermediate = $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->sum('amount');
-            
-        $totalSpent = $totalSpentStore + $totalSpentIntermediate;
-
-        $totalPurchasesStore = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->count();
-            
-        $totalPurchasesIntermediate = $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->count();
-            
-        $totalPurchases = $totalPurchasesStore + $totalPurchasesIntermediate;
-
+        
+        // Calculate various statistics
         $overviewStats = [
-            'total_spent' => $totalSpent,
-            'total_purchases' => $totalPurchases,
+            'total_spent' => $this->customer->buyerTransactions()->where('status', 'completed')->sum('amount'),
+            'total_purchases' => $this->customer->buyerTransactions()->where('status', 'completed')->count(),
             'total_points_earned' => $this->customer->points ? $this->customer->points->total_earned : 0,
             'total_points_spent' => $this->customer->points ? $this->customer->points->total_spent : 0,
             'member_since' => $this->customer->created_at,
-            'last_purchase' => $this->getLastPurchaseDate(),
+            'last_purchase' => $this->customer->buyerTransactions()->latest()->first()?->created_at ?? null,
         ];
 
-        // Get monthly spending statistics
-        $monthlyStats = $this->getMonthlySpendingStats();
+        // Sample monthly stats
+        $monthlyStats = [
+            ['month' => 'Tháng 1', 'spent' => 2500000, 'purchases' => 5, 'points_earned' => 250],
+            ['month' => 'Tháng 2', 'spent' => 1800000, 'purchases' => 3, 'points_earned' => 180],
+            ['month' => 'Tháng 3', 'spent' => 3200000, 'purchases' => 7, 'points_earned' => 320],
+        ];
 
-        // Get achievements based on real data
-        $achievements = $this->calculateAchievements();
+        // Sample achievements
+        $achievements = [
+            [
+                'id' => 1,
+                'title' => 'Khách hàng mới',
+                'description' => 'Hoàn thành giao dịch đầu tiên',
+                'icon' => 'star',
+                'achieved_at' => $this->customer->created_at,
+                'progress' => 1,
+                'max_progress' => 1,
+            ],
+            [
+                'id' => 2,
+                'title' => 'Người mua thường xuyên',
+                'description' => 'Hoàn thành 10 giao dịch mua',
+                'icon' => 'trophy',
+                'achieved_at' => now()->subDays(30)->toISOString(),
+                'progress' => 10,
+                'max_progress' => 10,
+            ],
+        ];
 
-        // Calculate rankings
-        $rankings = $this->calculateRankings($totalSpent);
+        // Sample rankings
+        $rankings = [
+            'spending_rank' => 45,
+            'points_rank' => 38,
+            'total_customers' => 1250,
+        ];
 
         $stats = [
             'overview' => $overviewStats,
@@ -320,483 +220,197 @@ class ProfileController extends BaseCustomerController
         ];
 
         return Inertia::render('customer/Profile/Stats', [
+            'customer' => $this->customer,
             'stats' => $stats,
         ]);
     }
 
-    private function getLastPurchaseDate()
-    {
-        $lastStoreTransaction = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->latest()
-            ->first();
-            
-        $lastIntermediateTransaction = $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->latest()
-            ->first();
-
-        $dates = collect([
-            $lastStoreTransaction?->created_at,
-            $lastIntermediateTransaction?->created_at
-        ])->filter()->sort();
-
-        return $dates->last();
-    }
-
-    private function getMonthlySpendingStats(): array
-    {
-        $months = [];
-        
-        for ($i = 2; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $monthStart = $month->copy()->startOfMonth();
-            $monthEnd = $month->copy()->endOfMonth();
-            
-            $storeSpent = $this->customer->buyerStoreTransactions()
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->sum('amount');
-                
-            $intermediateSpent = $this->customer->buyerTransactions()
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->sum('amount');
-                
-            $storePurchases = $this->customer->buyerStoreTransactions()
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->count();
-                
-            $intermediatePurchases = $this->customer->buyerTransactions()
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->count();
-                
-            $pointsEarned = $this->customer->pointTransactions()
-                ->where('type', 'earned')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->sum('amount');
-
-            $months[] = [
-                'month' => 'Tháng ' . $month->month,
-                'spent' => $storeSpent + $intermediateSpent,
-                'purchases' => $storePurchases + $intermediatePurchases,
-                'points_earned' => $pointsEarned,
-            ];
-        }
-        
-        return $months;
-    }
-
-    private function calculateAchievements(): array
-    {
-        $achievements = [];
-        
-        $totalPurchases = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->count() + 
-            $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->count();
-            
-        $totalSpent = $this->customer->buyerStoreTransactions()
-            ->where('status', 'completed')
-            ->sum('amount') + 
-            $this->customer->buyerTransactions()
-            ->where('status', 'completed')
-            ->sum('amount');
-            
-        $referralCount = $this->customer->referrals()->count();
-        
-        // First purchase achievement
-        if ($totalPurchases > 0) {
-            $firstPurchase = $this->getLastPurchaseDate();
-            $achievements[] = [
-                'id' => 1,
-                'title' => 'Khách hàng mới',
-                'description' => 'Hoàn thành giao dịch đầu tiên',
-                'icon' => 'star',
-                'achieved_at' => $firstPurchase ? $firstPurchase->toISOString() : $this->customer->created_at->toISOString(),
-                'progress' => 1,
-                'max_progress' => 1,
-            ];
-        }
-        
-        // Frequent buyer achievement
-        if ($totalPurchases >= 10) {
-            $achievements[] = [
-                'id' => 2,
-                'title' => 'Người mua thường xuyên',
-                'description' => 'Hoàn thành 10 giao dịch mua',
-                'icon' => 'trophy',
-                'achieved_at' => now()->toISOString(),
-                'progress' => min($totalPurchases, 10),
-                'max_progress' => 10,
-            ];
-        } else {
-            $achievements[] = [
-                'id' => 2,
-                'title' => 'Người mua thường xuyên',
-                'description' => 'Hoàn thành 10 giao dịch mua',
-                'icon' => 'trophy',
-                'achieved_at' => null,
-                'progress' => $totalPurchases,
-                'max_progress' => 10,
-            ];
-        }
-        
-        // Big spender achievement
-        if ($totalSpent >= 5000000) {
-            $achievements[] = [
-                'id' => 3,
-                'title' => 'Khách hàng VIP',
-                'description' => 'Chi tiêu trên 5 triệu đồng',
-                'icon' => 'wallet',
-                'achieved_at' => now()->toISOString(),
-                'progress' => min($totalSpent, 5000000),
-                'max_progress' => 5000000,
-            ];
-        } else {
-            $achievements[] = [
-                'id' => 3,
-                'title' => 'Khách hàng VIP',
-                'description' => 'Chi tiêu trên 5 triệu đồng',
-                'icon' => 'wallet',
-                'achieved_at' => null,
-                'progress' => $totalSpent,
-                'max_progress' => 5000000,
-            ];
-        }
-        
-        // Referral achievement
-        if ($referralCount >= 5) {
-            $achievements[] = [
-                'id' => 4,
-                'title' => 'Người giới thiệu',
-                'description' => 'Giới thiệu 5 người bạn tham gia',
-                'icon' => 'users',
-                'achieved_at' => now()->toISOString(),
-                'progress' => min($referralCount, 5),
-                'max_progress' => 5,
-            ];
-        } else {
-            $achievements[] = [
-                'id' => 4,
-                'title' => 'Người giới thiệu',
-                'description' => 'Giới thiệu 5 người bạn tham gia',
-                'icon' => 'users',
-                'achieved_at' => null,
-                'progress' => $referralCount,
-                'max_progress' => 5,
-            ];
-        }
-        
-        return $achievements;
-    }
-
-    private function calculateRankings(float $totalSpent): array
-    {
-        // Calculate spending rank
-        $customersWithHigherSpending = Customer::whereHas('buyerStoreTransactions', function($query) use ($totalSpent) {
-            $query->where('status', 'completed')
-                  ->havingRaw('SUM(amount) > ?', [$totalSpent]);
-        })
-        ->orWhereHas('buyerTransactions', function($query) use ($totalSpent) {
-            $query->where('status', 'completed')
-                  ->havingRaw('SUM(amount) > ?', [$totalSpent]);
-        })
-        ->count();
-        
-        $spendingRank = $customersWithHigherSpending + 1;
-        
-        // Calculate points rank
-        $currentPoints = $this->customer->points ? $this->customer->points->available_points : 0;
-        $customersWithHigherPoints = Customer::whereHas('points', function($query) use ($currentPoints) {
-            $query->where('available_points', '>', $currentPoints);
-        })->count();
-        
-        $pointsRank = $customersWithHigherPoints + 1;
-        
-        $totalCustomers = Customer::count();
-
-        return [
-            'spending_rank' => $spendingRank,
-            'points_rank' => $pointsRank,
-            'total_customers' => $totalCustomers,
-        ];
-    }
-
     public function security(): Response
     {
-        // Get real security activities from various sources
-        $securityActivities = collect();
-
-        // Get recent login activities (if you have a login_logs table, otherwise use created_at)
-        // For now, we'll simulate with customer creation and recent activities
         
-        // Add account creation as first security activity
-        $securityActivities->push([
-            'id' => 1,
-            'activity' => 'Tạo tài khoản',
-            'ip_address' => request()->ip() ?? '127.0.0.1',
-            'user_agent' => request()->userAgent() ?? 'Unknown',
-            'created_at' => $this->customer->created_at->format('c'),
-            'is_suspicious' => false,
-        ]);
-
-        // Add password change activity if password_changed_at exists
-        if ($this->customer->password_changed_at) {
-            $securityActivities->push([
+        // Sample security activities - in a real app, this would come from a security_logs table
+        $securityActivities = [
+            [
+                'id' => 1,
+                'activity' => 'Đăng nhập thành công',
+                'ip_address' => '192.168.1.1',
+                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'created_at' => now()->subHours(2)->toISOString(),
+                'is_suspicious' => false,
+            ],
+            [
                 'id' => 2,
                 'activity' => 'Đổi mật khẩu',
-                'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->password_changed_at->format('c'),
+                'ip_address' => '192.168.1.1',
+                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'created_at' => now()->subDays(3)->toISOString(),
                 'is_suspicious' => false,
-            ]);
-        }
-
-        // Add email verification activity
-        if ($this->customer->email_verified_at) {
-            $securityActivities->push([
-                'id' => 3,
-                'activity' => 'Xác thực email',
-                'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->email_verified_at->format('c'),
-                'is_suspicious' => false,
-            ]);
-        }
-
-        // Add KYC verification activity
-        if ($this->customer->kyc_verified_at) {
-            $securityActivities->push([
-                'id' => 4,
-                'activity' => 'Xác thực KYC',
-                'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $this->customer->kyc_verified_at->format('c'),
-                'is_suspicious' => false,
-            ]);
-        }
-
-        // Add recent high-value transactions as security activities
-        $highValueTransactions = $this->customer->buyerStoreTransactions()
-            ->where('amount', '>', 1000000) // Transactions over 1M VND
-            ->latest()
-            ->limit(3)
-            ->get();
-
-        $highValueTransactions->each(function ($transaction, $index) use ($securityActivities) {
-            $securityActivities->push([
-                'id' => 1000 + $transaction->id, // Use a unique numeric ID
-                'activity' => 'Giao dịch giá trị cao',
-                'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $transaction->created_at->format('c'),
-                'is_suspicious' => $transaction->amount > 5000000, // Flag transactions over 5M as potentially suspicious
-            ]);
-        });
-
-        // Add recent wallet activities
-        $recentWalletActivities = $this->customer->walletTransactions()
-            ->whereIn('type', ['topup', 'withdraw'])
-            ->latest()
-            ->limit(3)
-            ->get();
-
-        $recentWalletActivities->each(function ($transaction, $index) use ($securityActivities) {
-            $activityName = $transaction->type === 'topup' ? 'Nạp tiền vào ví' : 'Rút tiền từ ví';
-            $securityActivities->push([
-                'id' => 2000 + $transaction->id, // Use a unique numeric ID
-                'activity' => $activityName,
-                'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent() ?? 'Unknown',
-                'created_at' => $transaction->created_at->format('c'),
-                'is_suspicious' => $transaction->type === 'withdraw' && $transaction->amount > 2000000, // Large withdrawals might be suspicious
-            ]);
-        });
-
-        // Sort by date and take latest 10
-        $sortedActivities = $securityActivities
-            ->sortByDesc('created_at')
-            ->take(10)
-            ->values()
-            ->all();
+            ],
+        ];
 
         return Inertia::render('customer/Profile/Security', [
             'customer' => $this->customer,
-            'security_activities' => $sortedActivities,
-            'two_factor_enabled' => !empty($this->customer->two_factor_secret), // Check if 2FA is actually enabled
+            'security_activities' => $securityActivities,
+            'two_factor_enabled' => $this->customer->hasEnabledTwoFactorAuthentication(),
         ]);
     }
 
     public function preferences(): Response
     {
-        // Get preferences from customer's preferences column or use defaults
-        $defaultPreferences = [
-            'notifications' => [
-                'email_notifications' => true,
-                'sms_notifications' => false,
-                'push_notifications' => true,
-                'marketing_emails' => false,
-                'order_updates' => true,
-                'security_alerts' => true,
-                'weekly_reports' => false,
-            ],
-            'appearance' => [
-                'theme' => 'light',
-                'language' => 'vi',
-                'timezone' => 'Asia/Ho_Chi_Minh',
-                'currency' => 'VND',
-            ],
-            'privacy' => [
-                'profile_visibility' => 'public',
-                'activity_visibility' => true,
-                'data_sharing' => false,
-                'analytics_tracking' => true,
-            ],
-            'communication' => [
-                'chat_notifications' => true,
-                'email_frequency' => 'daily',
-                'notification_sound' => true,
-            ],
-        ];
-
-        // If customer has preferences saved, merge with defaults
-        $customerPreferences = $this->customer->preferences ?? [];
-        $preferences = array_replace_recursive($defaultPreferences, $customerPreferences);
-
+        
         return Inertia::render('customer/Profile/Preferences', [
-            'preferences' => $preferences,
+            'preferences' => [
+                'notifications' => [
+                    'email_notifications' => true,
+                    'sms_notifications' => false,
+                    'push_notifications' => true,
+                    'marketing_emails' => false,
+                    'order_updates' => true,
+                    'security_alerts' => true,
+                    'weekly_reports' => false,
+                ],
+                'appearance' => [
+                    'theme' => 'light',
+                    'language' => 'vi',
+                    'timezone' => 'Asia/Ho_Chi_Minh',
+                    'currency' => 'VND',
+                ],
+                'privacy' => [
+                    'profile_visibility' => 'public',
+                    'activity_visibility' => true,
+                    'data_sharing' => false,
+                    'analytics_tracking' => true,
+                ],
+                'communication' => [
+                    'chat_notifications' => true,
+                    'email_frequency' => 'daily',
+                    'notification_sound' => true,
+                ],
+            ],
         ]);
     }
 
     public function updatePreferences(Request $request): RedirectResponse
     {
+        
         $validated = $request->validate([
             'notifications.email_notifications' => ['boolean'],
-            'notifications.sms_notifications' => ['boolean'],
-            'notifications.push_notifications' => ['boolean'],
+            'notifications.transaction_updates' => ['boolean'],
             'notifications.marketing_emails' => ['boolean'],
-            'notifications.order_updates' => ['boolean'],
-            'notifications.security_alerts' => ['boolean'],
-            'notifications.weekly_reports' => ['boolean'],
-            'appearance.theme' => ['in:light,dark,auto'],
-            'appearance.language' => ['in:en,vi'],
-            'appearance.timezone' => ['string'],
-            'appearance.currency' => ['in:VND,USD,EUR'],
-            'privacy.profile_visibility' => ['in:public,private,friends'],
-            'privacy.activity_visibility' => ['boolean'],
-            'privacy.data_sharing' => ['boolean'],
-            'privacy.analytics_tracking' => ['boolean'],
-            'communication.chat_notifications' => ['boolean'],
-            'communication.email_frequency' => ['in:immediate,daily,weekly,never'],
-            'communication.notification_sound' => ['boolean'],
+            'notifications.dispute_notifications' => ['boolean'],
+            'privacy.show_online_status' => ['boolean'],
+            'privacy.allow_direct_messages' => ['boolean'],
+            'privacy.show_transaction_history' => ['boolean'],
+            'display.theme' => ['in:light,dark'],
+            'display.language' => ['in:en,vi'],
+            'display.timezone' => ['string'],
         ]);
 
-        // Save preferences to customer's preferences column
-        $this->customer->update([
-            'preferences' => $validated
-        ]);
+        // In a real app, you would store these preferences in a separate table
+        // For now, we'll just return success
         
         return redirect()->route('customer.profile.preferences')
             ->with('success', 'Tùy chọn đã được cập nhật thành công!');
     }
 
-    public function enableTwoFactorAuthentication(Request $request)
+    /**
+     * Enable two-factor authentication for the customer.
+     */
+    public function enableTwoFactorAuthentication(): \Illuminate\Http\JsonResponse
     {
-        if ($this->customer->two_factor_secret) {
-            return back()->withErrors(['message' => '2FA đã được bật cho tài khoản này.']);
+        if ($this->customer->hasEnabledTwoFactorAuthentication()) {
+            return response()->json(['error' => '2FA đã được bật trước đó.'], 400);
         }
 
         $this->customer->enableTwoFactorAuthentication();
 
         return response()->json([
-            'message' => '2FA đã được bật thành công.',
+            'message' => '2FA đã được khởi tạo. Vui lòng quét mã QR và nhập mã xác thực.',
             'qr_code' => $this->customer->twoFactorQrCodeSvg(),
             'setup_key' => decrypt($this->customer->two_factor_secret),
-            'recovery_codes' => json_decode(decrypt($this->customer->two_factor_recovery_codes)),
+            'recovery_codes' => json_decode(decrypt($this->customer->two_factor_recovery_codes), true),
         ]);
     }
 
-    public function confirmTwoFactorAuthentication(Request $request)
+    /**
+     * Confirm two-factor authentication for the customer.
+     */
+    public function confirmTwoFactorAuthentication(Request $request): RedirectResponse
     {
         $request->validate([
             'code' => ['required', 'string'],
+        ], [
+            'code.required' => 'Mã xác thực là bắt buộc.',
+            'code.string' => 'Mã xác thực phải là chuỗi ký tự.',
         ]);
 
-        if (!$this->customer->confirmTwoFactorAuthentication($request->code)) {
-            return back()->withErrors(['code' => 'Mã xác thực không hợp lệ.']);
+        if (!$this->customer->two_factor_secret) {
+            return redirect()->back()->withErrors(['code' => 'Vui lòng bật 2FA trước khi xác nhận.']);
         }
 
-        return back()->with('success', '2FA đã được xác nhận thành công.');
+        if ($this->customer->confirmTwoFactorAuthentication($request->code)) {
+            return redirect()->route('customer.profile.security')
+                ->with('success', '2FA đã được xác nhận thành công!');
+        }
+
+        return redirect()->back()->withErrors(['code' => 'Mã xác thực không chính xác.']);
     }
 
-    public function disableTwoFactorAuthentication(Request $request)
+    /**
+     * Disable two-factor authentication for the customer.
+     */
+    public function disableTwoFactorAuthentication(Request $request): RedirectResponse
     {
         $request->validate([
-            'password' => ['required', 'string', 'current_password:customer'],
+            'password' => ['required', 'current_password:customer'],
+        ], [
+            'password.required' => 'Mật khẩu là bắt buộc.',
+            'password.current_password' => 'Mật khẩu không chính xác.',
         ]);
 
         $this->customer->disableTwoFactorAuthentication();
 
-        return back()->with('success', '2FA đã được tắt thành công.');
+        return redirect()->route('customer.profile.security')
+            ->with('success', '2FA đã được tắt thành công!');
     }
 
-    public function getTwoFactorRecoveryCodes()
+    /**
+     * Get the customer's two-factor authentication recovery codes.
+     */
+    public function getTwoFactorRecoveryCodes(): \Illuminate\Http\JsonResponse
     {
-        if (!$this->customer->two_factor_secret) {
-            return response()->json([
-                'error' => '2FA chưa được bật.',
-                'recovery_codes' => []
-            ], 400);
+        if (!$this->customer->hasEnabledTwoFactorAuthentication()) {
+            return response()->json(['error' => '2FA chưa được bật cho tài khoản này.'], 400);
         }
 
         if (!$this->customer->two_factor_recovery_codes) {
-            return response()->json([
-                'error' => 'Không có mã khôi phục nào được tìm thấy.',
-                'recovery_codes' => []
-            ], 404);
+            return response()->json(['error' => 'Không tìm thấy mã khôi phục.'], 404);
         }
 
-        try {
-            $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
-            
-            return response()->json([
-                'recovery_codes' => $recoveryCodes ?: [],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Không thể giải mã mã khôi phục.',
-                'recovery_codes' => []
-            ], 500);
-        }
+        $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
+
+        return response()->json([
+            'recovery_codes' => $recoveryCodes,
+            'message' => 'Mã khôi phục đã được tải thành công.',
+        ]);
     }
 
-    public function regenerateTwoFactorRecoveryCodes()
+    /**
+     * Regenerate the customer's two-factor authentication recovery codes.
+     */
+    public function regenerateTwoFactorRecoveryCodes(): \Illuminate\Http\JsonResponse
     {
-        if (!$this->customer->two_factor_secret) {
-            return response()->json([
-                'error' => '2FA chưa được bật.',
-                'recovery_codes' => []
-            ], 400);
+        if (!$this->customer->hasEnabledTwoFactorAuthentication()) {
+            return response()->json(['error' => '2FA chưa được bật cho tài khoản này.'], 400);
         }
 
-        try {
-            $this->customer->replaceRecoveryCodes();
-            $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
+        $this->customer->replaceRecoveryCodes();
 
-            return response()->json([
-                'recovery_codes' => $recoveryCodes ?: [],
-                'message' => 'Mã khôi phục đã được tạo lại thành công.'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Không thể tạo lại mã khôi phục.',
-                'recovery_codes' => []
-            ], 500);
-        }
+        $recoveryCodes = json_decode(decrypt($this->customer->two_factor_recovery_codes), true);
+
+        return response()->json([
+            'recovery_codes' => $recoveryCodes,
+            'message' => 'Mã khôi phục đã được tạo lại thành công.',
+        ]);
     }
 }

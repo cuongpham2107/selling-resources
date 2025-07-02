@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Upload, X, FileText, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,7 +75,7 @@ export default function CreateDispute({ disputableTransactions, disputeReasons }
             
             <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col items-start space-y-4">
                     <Link href="/customer/disputes">
                         <Button variant="outline" size="sm">
                             <ArrowLeft className="w-4 h-4 mr-2" />

@@ -227,6 +227,18 @@ class Customer extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all top-up transactions (deposits) for this customer
+     * 
+     * Lấy tất cả giao dịch nạp tiền của khách hàng này
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function topups(): HasMany
+    {
+        return $this->hasMany(WalletTransaction::class)->where('type', 'deposit');
+    }
+
+    /**
      * Get all disputes created by this customer
      * 
      * Lấy tất cả tranh chấp được tạo bởi khách hàng này
@@ -473,5 +485,13 @@ class Customer extends Authenticatable implements MustVerifyEmail
         $email = urlencode($this->email);
         
         return "otpauth://totp/{$appName}:{$email}?secret={$secret}&issuer={$appName}";
+    }
+
+    /**
+     * Check if the customer has enabled two factor authentication.
+     */
+    public function hasEnabledTwoFactorAuthentication(): bool
+    {
+        return !is_null($this->two_factor_secret) && !is_null($this->two_factor_confirmed_at);
     }
 }

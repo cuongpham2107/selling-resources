@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useForm, router } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { 
     ArrowLeft, 
     Shield, 
@@ -11,7 +11,6 @@ import {
     AlertTriangle,
     CheckCircle,
     Clock,
-    QrCode,
     Copy,
     RefreshCw
 } from 'lucide-react';
@@ -21,7 +20,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { getRelativeTime } from '@/lib/date';
@@ -58,7 +56,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
     const [isLoadingRecoveryCodes, setIsLoadingRecoveryCodes] = useState(false);
     const [recoveryCodesError, setRecoveryCodesError] = useState<string>('');
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, patch, processing, errors, reset } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -74,7 +72,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
 
     const handlePasswordUpdate = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/customer/profile/password', {
+        patch('/customer/profile/password', {
             onSuccess: () => {
                 reset();
             }
@@ -99,7 +97,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                 setTwoFactorSetup({
                     qrCode: `data:image/svg+xml;base64,${btoa(data.qr_code)}`,
                     setupKey: data.setup_key,
-                    recoveryCodes: data.recovery_codes,
+                    recoveryCodes: Array.isArray(data.recovery_codes) ? data.recovery_codes : [],
                 });
             }
         })
@@ -117,8 +115,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                 setTwoFactorSetup(null);
                 setIsSettingUp2FA(false);
                 confirmationForm.reset();
-                // Refresh the page to update the 2FA status
-                router.reload();
+                // No need to reload, the redirect will handle the page update
             }
         });
     };
@@ -129,7 +126,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
         disableForm.delete('/customer/profile/two-factor-authentication', {
             onSuccess: () => {
                 disableForm.reset();
-                router.reload();
+                // No need to reload, the redirect will handle the page update
             }
         });
     };
@@ -158,8 +155,19 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
         .then(({ status, data }) => {
             console.log('Recovery codes response:', { status, data });
             
-            if (status === 200 && data.recovery_codes && Array.isArray(data.recovery_codes)) {
-                setRecoveryCodes(data.recovery_codes);
+            if (status === 200 && data.recovery_codes) {
+                // Handle both array and string formats
+                let codes: string[] = [];
+                if (Array.isArray(data.recovery_codes)) {
+                    codes = data.recovery_codes;
+                } else if (typeof data.recovery_codes === 'string') {
+                    // If it's a single string, split it or treat it as one code
+                    codes = data.recovery_codes.includes(',') 
+                        ? data.recovery_codes.split(',').map((code: string) => code.trim())
+                        : [data.recovery_codes];
+                }
+                
+                setRecoveryCodes(codes);
                 setRecoveryCodesError('');
             } else {
                 console.warn('Error or no recovery codes:', data);
@@ -198,8 +206,19 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
         .then(({ status, data }) => {
             console.log('Regenerate recovery codes response:', { status, data });
             
-            if (status === 200 && data.recovery_codes && Array.isArray(data.recovery_codes)) {
-                setRecoveryCodes(data.recovery_codes);
+            if (status === 200 && data.recovery_codes) {
+                // Handle both array and string formats
+                let codes: string[] = [];
+                if (Array.isArray(data.recovery_codes)) {
+                    codes = data.recovery_codes;
+                } else if (typeof data.recovery_codes === 'string') {
+                    // If it's a single string, split it or treat it as one code
+                    codes = data.recovery_codes.includes(',') 
+                        ? data.recovery_codes.split(',').map((code: string) => code.trim())
+                        : [data.recovery_codes];
+                }
+                
+                setRecoveryCodes(codes);
                 setRecoveryCodesError('');
                 
                 // Show success message if available
@@ -240,15 +259,12 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
         return 'text-gray-600 bg-gray-50';
     };
 
-
-    console.log('customer', customer);
-
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col items-start space-y-4">
                         <Link href="/customer/profile">
                             <Button variant="ghost" size="sm">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -322,8 +338,17 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                             Mật khẩu mạnh
                                         </div>
                                         <div className="flex items-center text-sm">
-                                            <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
-                                            Chưa bật xác thực 2 bước
+                                            {two_factor_enabled ? (
+                                                <>
+                                                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                                                    Đã bật xác thực 2 bước
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
+                                                    Chưa bật xác thực 2 bước
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -449,6 +474,23 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                             <p className="text-sm text-gray-600 mb-4">
                                                 Xác thực hai bước giúp bảo vệ tài khoản của bạn bằng cách yêu cầu mã xác thực từ thiết bị di động khi đăng nhập.
                                             </p>
+                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                                <div className="flex items-start">
+                                                    <div className="flex-shrink-0">
+                                                        <Smartphone className="w-5 h-5 text-blue-600 mt-0.5" />
+                                                    </div>
+                                                    <div className="ml-3">
+                                                        <h4 className="text-sm font-semibold text-blue-800 mb-1">Cần có ứng dụng xác thực trên điện thoại</h4>
+                                                        <p className="text-xs text-blue-700">
+                                                            Bạn cần cài đặt một trong các ứng dụng sau trên điện thoại:<br/>
+                                                            • <strong>Google Authenticator</strong> (iOS/Android)<br/>
+                                                            • <strong>Microsoft Authenticator</strong> (iOS/Android)<br/>
+                                                            • <strong>Authy</strong> (iOS/Android)<br/>
+                                                            • Hoặc ứng dụng xác thực TOTP khác
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div className="flex items-center space-x-3">
                                                 <Badge variant={two_factor_enabled ? "default" : "secondary"} className="text-sm">
                                                     {two_factor_enabled ? (
@@ -490,7 +532,14 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                                                 <DialogHeader>
                                                                     <DialogTitle>Mã khôi phục</DialogTitle>
                                                                     <DialogDescription>
-                                                                        Lưu trữ các mã này ở nơi an toàn. Mỗi mã chỉ có thể sử dụng một lần.
+                                                                        <div className="space-y-2">
+                                                                            <p>Lưu trữ các mã này ở nơi an toàn. Mỗi mã chỉ có thể sử dụng một lần.</p>
+                                                                            <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                                                                                <p className="text-xs text-amber-700">
+                                                                                    <strong>Lưu ý:</strong> Sử dụng mã khôi phục khi bạn không thể truy cập ứng dụng xác thực trên điện thoại (mất điện thoại, xóa ứng dụng, v.v.)
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
                                                                     </DialogDescription>
                                                                 </DialogHeader>
                                                                 {isLoadingRecoveryCodes ? (
@@ -512,7 +561,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                                                         )}
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="grid grid-cols-2 gap-2 text-sm font-mono">
+                                                                    <div className=" gap-2 text-sm font-mono">
                                                                         {recoveryCodes.length > 0 ? (
                                                                             recoveryCodes.map((code, index) => (
                                                                                 <div key={index} className="bg-gray-50 p-2 rounded border flex items-center justify-between">
@@ -617,9 +666,39 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                             </DialogTitle>
                                         </DialogHeader>
                                         <DialogDescription>
-                                            <p className="text-sm text-gray-600 mb-4">
-                                                Để bảo mật tài khoản tốt hơn, hãy bật xác thực hai bước. Quét mã QR bên dưới bằng ứng dụng xác thực trên điện thoại của bạn, sau đó nhập mã xác thực.
-                                            </p>
+                                            <div className="space-y-4">
+                                                <p className="text-sm text-gray-600">
+                                                    Để bảo mật tài khoản tốt hơn, hãy bật xác thực hai bước. Làm theo các bước sau:
+                                                </p>
+                                                
+                                                {/* Step-by-step guide */}
+                                                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                                                    <h4 className="font-semibold text-gray-800 text-sm">Hướng dẫn thiết lập:</h4>
+                                                    <div className="space-y-2 text-sm text-gray-600">
+                                                        <div className="flex items-start">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full text-xs flex items-center justify-center font-semibold mr-3 mt-0.5">1</span>
+                                                            <div>
+                                                                <p className="font-medium">Cài đặt ứng dụng xác thực</p>
+                                                                <p className="text-xs text-gray-500">Tải Google Authenticator, Microsoft Authenticator hoặc Authy từ App Store/Play Store</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-start">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full text-xs flex items-center justify-center font-semibold mr-3 mt-0.5">2</span>
+                                                            <div>
+                                                                <p className="font-medium">Quét mã QR</p>
+                                                                <p className="text-xs text-gray-500">Mở ứng dụng và quét mã QR bên dưới hoặc nhập mã thiết lập thủ công</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-start">
+                                                            <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full text-xs flex items-center justify-center font-semibold mr-3 mt-0.5">3</span>
+                                                            <div>
+                                                                <p className="font-medium">Nhập mã xác thực</p>
+                                                                <p className="text-xs text-gray-500">Nhập mã 6 chữ số hiển thị trong ứng dụng xác thực vào ô bên dưới</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             
                                             {/* QR Code and Setup Key */}
                                             <div className="flex flex-col items-center">
@@ -693,7 +772,7 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
                                                         Lưu trữ các mã này ở nơi an toàn. Bạn có thể sử dụng chúng để truy cập tài khoản nếu mất thiết bị xác thực.
                                                     </p>
                                                     <div className="grid grid-cols-2 gap-2 text-sm font-mono">
-                                                        {twoFactorSetup.recoveryCodes.map((code, index) => (
+                                                        {Array.isArray(twoFactorSetup.recoveryCodes) && twoFactorSetup.recoveryCodes.map((code, index) => (
                                                             <div key={index} className="bg-white p-2 rounded border">
                                                                 {code}
                                                             </div>

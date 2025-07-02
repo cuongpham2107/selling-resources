@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import { User, Edit, Activity, TrendingUp, Shield, Settings, Calendar, Mail, Phone } from 'lucide-react';
+import { User, Edit, Activity, TrendingUp, Shield, Calendar, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +93,7 @@ export default function ProfileShow({ customer }: ProfileShowPageProps) {
                                 <CardTitle>Hành động nhanh</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <Link href="/customer/profile/activity">
                                         <Button variant="outline" className="w-full h-20 flex-col">
                                             <Activity className="w-6 h-6 mb-2" />
@@ -112,12 +112,12 @@ export default function ProfileShow({ customer }: ProfileShowPageProps) {
                                             <span className="text-xs">Bảo mật</span>
                                         </Button>
                                     </Link>
-                                    <Link href="/customer/profile/preferences">
+                                    {/* <Link href="/customer/profile/preferences">
                                         <Button variant="outline" className="w-full h-20 flex-col">
                                             <Settings className="w-6 h-6 mb-2" />
                                             <span className="text-xs">Tùy chọn</span>
                                         </Button>
-                                    </Link>
+                                    </Link> */}
                                 </div>
                             </CardContent>
                         </Card>

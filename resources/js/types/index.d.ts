@@ -81,7 +81,7 @@ export interface CustomerBalance {
 export interface CustomerPoint {
     id: number;
     customer_id: number;
-    available_points: number;
+    points: number;
     total_earned: number;
     total_spent: number;
     created_at: string;
@@ -149,6 +149,8 @@ export interface IntermediateTransaction {
     completed_at?: string;
     created_at: string;
     updated_at: string;
+    // Optional evidence field for file attachments
+    evidence?: string[] | null;
     // Relationships
     buyer?: Customer;
     seller?: Customer;
@@ -241,6 +243,41 @@ export interface PointTransaction {
     created_at: string;
     updated_at: string;
     customer?: Customer;
+}
+
+export interface WalletTransaction {
+    id: number;
+    transaction_code?: string;
+    customer_id: number;
+    type: 'deposit' | 'withdrawal' | 'transfer_in' | 'transfer_out';
+    amount: number;
+    fee: number;
+    net_amount: number;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    payment_method?: string;
+    description: string;
+    vnpay_txn_ref?: string;
+    vnpay_transaction_no?: string;
+    vnpay_bank_code?: string;
+    vnpay_response_code?: string;
+    vnpay_response?: Record<string, unknown>;
+    withdrawal_info?: {
+        bank_name: string;
+        account_number: string;
+        account_holder: string;
+    };
+    transfer_info?: Record<string, unknown>;
+    recipient_id?: number;
+    sender_id?: number;
+    note?: string;
+    processed_at?: string;
+    completed_at?: string;
+    created_at: string;
+    updated_at: string;
+    // Relationships
+    customer?: Customer;
+    recipient?: Customer;
+    sender?: Customer;
 }
 
 export interface Referral {

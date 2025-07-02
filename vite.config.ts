@@ -21,6 +21,9 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    build: {
+        cssMinify: false, // Disable CSS minification to avoid syntax errors
+    },
     resolve: {
         alias: {
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),

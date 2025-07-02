@@ -52,7 +52,7 @@ export default function Analytics({ store, analytics }: AnalyticsPageProps) {
         <CustomerLayout>
             <Head title="Phân tích cửa hàng" />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex flex-col items-start gap-4">
                     <Link href="/customer/store">

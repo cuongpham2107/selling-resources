@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,6 @@ import {
     User,
     Clock,
     CheckCircle,
-    XCircle,
     AlertTriangle,
     MessageSquare,
     Shield,
@@ -118,7 +117,7 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
 
     return (
         <CustomerLayout title={`Giao dịch ${transaction.transaction_code}`}>
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">

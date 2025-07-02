@@ -18,9 +18,9 @@ import {
     TrendingDown,
     Wallet
 } from 'lucide-react';
-import type { IntermediateTransaction, Customer } from '@/types';
+import type { WalletTransaction, Customer } from '@/types';
 
-interface TransactionWithRelations extends IntermediateTransaction {
+interface TransactionWithRelations extends WalletTransaction {
     customer?: Customer;
     recipient?: Customer;
     sender?: Customer;
@@ -90,10 +90,9 @@ export default function History({ transactions }: Props) {
     const getStatusBadge = (status: string) => {
         const statusConfig = {
             pending: { label: 'Đang xử lý', variant: 'secondary' as const },
-            confirmed: { label: 'Đã xác nhận', variant: 'default' as const },
+            processing: { label: 'Đang xử lý', variant: 'secondary' as const },
             completed: { label: 'Hoàn thành', variant: 'default' as const },
-            cancelled: { label: 'Đã hủy', variant: 'destructive' as const },
-            expired: { label: 'Đã hết hạn', variant: 'destructive' as const },
+            failed: { label: 'Thất bại', variant: 'destructive' as const },
         };
 
         const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -140,9 +139,9 @@ export default function History({ transactions }: Props) {
         <CustomerLayout>
             <Head title="Lịch sử giao dịch" />
 
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-start gap-4">
                     <Link href={route('customer.wallet.index')}>
                         <Button variant="ghost" size="sm">
                             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -198,8 +197,9 @@ export default function History({ transactions }: Props) {
                                 <SelectContent>
                                     <SelectItem value="all">Tất cả trạng thái</SelectItem>
                                     <SelectItem value="pending">Đang xử lý</SelectItem>
+                                    <SelectItem value="processing">Đang xử lý</SelectItem>
                                     <SelectItem value="completed">Hoàn thành</SelectItem>
-                                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                                    <SelectItem value="failed">Thất bại</SelectItem>
                                 </SelectContent>
                             </Select>
 

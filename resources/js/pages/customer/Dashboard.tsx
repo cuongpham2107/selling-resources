@@ -19,6 +19,8 @@ import { formatVND, formatPoints } from '@/lib/currency';
 import { formatDateTime, getRelativeTime } from '@/lib/date';
 import { getStatusLabel, getTransactionStatusColor } from '@/lib/utils';
 import { CustomerStats, IntermediateTransaction, StoreTransaction, Notification } from '@/types';
+import { ResponsiveGrid } from '@/components/ui/responsive-container';
+import { StatsCard } from '@/components/ui/responsive-card';
 
 interface DashboardPageProps {
     stats: CustomerStats;
@@ -53,24 +55,24 @@ export default function CustomerDashboard({
 
     return (
         <CustomerLayout title="Trang chủ">
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6 mx-auto max-w-7xl">
                 {/* Welcome Section */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold mb-2">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <h1 className="text-xl sm:text-2xl font-bold mb-2">
                                 Chào mừng trở lại, {customer?.username}!
                             </h1>
-                            <p className="text-blue-100">
+                            <p className="text-blue-100 text-sm sm:text-base">
                                 Hôm nay là một ngày tuyệt vời để thực hiện giao dịch an toàn
                             </p>
                         </div>
-                        <div className="text-right">
-                            <div className="text-sm text-blue-200">Số dư hiện tại</div>
-                            <div className="text-2xl font-bold">
+                        <div className="text-left sm:text-right w-full sm:w-auto">
+                            <div className="text-xs sm:text-sm text-blue-200">Số dư hiện tại</div>
+                            <div className="text-xl sm:text-2xl font-bold">
                                 {formatVND(stats.current_balance)}
                             </div>
-                            <div className="text-sm text-blue-200 mt-1">
+                            <div className="text-xs sm:text-sm text-blue-200 mt-1">
                                 {formatPoints(stats.current_points)}
                             </div>
                         </div>
@@ -78,67 +80,35 @@ export default function CustomerDashboard({
                 </div>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Tổng giao dịch</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.total_transactions}</p>
-                                </div>
-                                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <ArrowRightLeft className="h-6 w-6 text-blue-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <ResponsiveGrid cols={{ default: 1, sm: 2, lg: 4 }} gap="md">
+                    <StatsCard
+                        title="Tổng giao dịch"
+                        value={stats.total_transactions}
+                        icon={ArrowRightLeft}
+                        iconColor="text-blue-600 dark:text-blue-400"
+                    />
 
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Tổng chi tiêu</p>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {formatVND(stats.total_spent)}
-                                    </p>
-                                </div>
-                                <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
-                                    <DollarSign className="h-6 w-6 text-red-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StatsCard
+                        title="Tổng chi tiêu"
+                        value={formatVND(stats.total_spent)}
+                        icon={DollarSign}
+                        iconColor="text-red-600 dark:text-red-400"
+                    />
 
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Doanh thu cửa hàng</p>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {formatVND(stats.store_sales)}
-                                    </p>
-                                </div>
-                                <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <Store className="h-6 w-6 text-green-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StatsCard
+                        title="Doanh thu cửa hàng"
+                        value={formatVND(stats.store_sales)}
+                        icon={Store}
+                        iconColor="text-green-600 dark:text-green-400"
+                    />
 
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Lượt giới thiệu</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.referrals_count}</p>
-                                </div>
-                                <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                    <Users className="h-6 w-6 text-purple-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                    <StatsCard
+                        title="Lượt giới thiệu"
+                        value={stats.referrals_count}
+                        icon={Users}
+                        iconColor="text-purple-600 dark:text-purple-400"
+                    />
+                </ResponsiveGrid>
 
                 {/* Quick Actions */}
                 {/* <Card>
