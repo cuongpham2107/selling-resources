@@ -153,7 +153,6 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
             }));
         })
         .then(({ status, data }) => {
-            console.log('Recovery codes response:', { status, data });
             
             if (status === 200 && data.recovery_codes) {
                 // Handle both array and string formats
@@ -204,7 +203,6 @@ export default function ProfileSecurity({ customer, security_activities, two_fac
             }));
         })
         .then(({ status, data }) => {
-            console.log('Regenerate recovery codes response:', { status, data });
             
             if (status === 200 && data.recovery_codes) {
                 // Handle both array and string formats

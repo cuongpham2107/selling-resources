@@ -1,12 +1,13 @@
 /**
  * Format VND currency
  */
-export function formatVND(amount: number): string {
+export function formatVND(amount: number, options?: Intl.NumberFormatOptions): string {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
+        ...options
     }).format(amount);
 }
 
@@ -18,7 +19,7 @@ export function formatPoints(points: number): string {
 }
 
 /**
- * Calculate transaction fee based on amount
+ * Calculate intermediate transaction fee based on amount (bracket system)
  */
 export function calculateTransactionFee(amount: number, durationDays: number = 0): number {
     let baseFee = 0;
@@ -38,6 +39,13 @@ export function calculateTransactionFee(amount: number, durationDays: number = 0
     }
     
     return baseFee;
+}
+
+/**
+ * Calculate store transaction fee (1% of amount)
+ */
+export function calculateStoreTransactionFee(amount: number, feePercentage: number = 1): number {
+    return Math.round(amount * feePercentage / 100);
 }
 
 /**

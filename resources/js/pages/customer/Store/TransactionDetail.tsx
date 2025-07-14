@@ -3,9 +3,10 @@ import { router } from '@inertiajs/react';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { formatVND } from '@/lib/currency';
 import { formatDate } from '@/lib/date';
+import StoreTransactionActions from '@/components/StoreTransactionActions';
+import AutoCompleteCountdown from '@/components/AutoCompleteCountdown';
 import {
     ArrowLeft,
     Package,
@@ -13,114 +14,33 @@ import {
     Clock,
     CheckCircle,
     AlertTriangle,
-    MessageSquare,
-    Shield,
     Store
 } from 'lucide-react';
-import type { Customer } from '@/types';
-
-interface StoreTransaction {
-    id: number;
-    transaction_code: string;
-    buyer_id: number;
-    seller_id: number;
-    product_id: number;
-    amount: number;
-    fee: number;
-    status: string;
-    completed_at?: string;
-    auto_complete_at?: string;
-    buyer_early_complete: boolean;
-    created_at: string;
-    buyer: {
-        id: number;
-        username: string;
-        wallet_balance?: number;
-    };
-    seller: {
-        id: number;
-        username: string;
-    };
-    product: {
-        id: number;
-        name: string;
-        description: string;
-        price: number;
-        images: string[];
-        store: {
-            id: number;
-            store_name: string;
-        };
-    };
-    chats: Array<{
-        id: number;
-        message: string;
-        created_at: string;
-        sender: {
-            id: number;
-            username: string;
-        };
-    }>;
-    disputes: Array<{
-        id: number;
-        reason: string;
-        status: string;
-        created_at: string;
-    }>;
-}
+import type { Customer, StoreTransaction } from '@/types';
+import { getStatusBadge } from '@/lib/config';
 
 interface Props {
     transaction: StoreTransaction;
     currentUser: Customer;
-    isBuyer: boolean;
-    isSeller: boolean;
 }
 
-export default function TransactionDetail({ transaction, currentUser, isBuyer, isSeller }: Props) {
-    const [isCompleting, setIsCompleting] = React.useState(false);
+export default function TransactionDetail({ transaction, currentUser }: Props) {
+    // Get user roles from transaction data
+    const isBuyer = transaction.is_buyer ?? (transaction.buyer_id === currentUser.id);
+    const isSeller = transaction.is_seller ?? (transaction.seller_id === currentUser.id);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'processing':
-                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Đang xử lý</Badge>;
-            case 'completed':
-                return <Badge variant="default" className="bg-green-100 text-green-800">Hoàn thành</Badge>;
-            case 'disputed':
-                return <Badge variant="destructive">Đang khiếu nại</Badge>;
-            case 'cancelled':
-                return <Badge variant="destructive" className="bg-gray-100 text-gray-800">Đã hủy</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
+    // Ensure amount and fee are numbers
+    const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount ?? 0;
+    const fee = typeof transaction.fee === 'string' ? parseFloat(transaction.fee) : transaction.fee ?? 0;
+    
 
-    const handleCompleteTransaction = async () => {
-        if (!isBuyer || transaction.status !== 'processing') return;
-
-        setIsCompleting(true);
-        try {
-            await router.post(`/customer/store/transactions/${transaction.id}/complete`);
-        } catch (error) {
-            console.error('Complete transaction failed:', error);
-        } finally {
-            setIsCompleting(false);
-        }
-    };
-
-    const handleCreateDispute = () => {
-        router.get(`/customer/disputes/create?transaction_id=${transaction.id}&type=store`);
-    };
-
-    const timeUntilAutoComplete = transaction.auto_complete_at 
-        ? new Date(transaction.auto_complete_at).getTime() - new Date().getTime()
-        : 0;
 
     return (
         <CustomerLayout title={`Giao dịch ${transaction.transaction_code}`}>
             <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-start gap-4">
                         <Button 
                             variant="ghost" 
                             onClick={() => router.get('/customer/store/transactions')}
@@ -154,7 +74,7 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                             </CardHeader>
                             <CardContent>
                                 <div className="flex gap-4">
-                                    {transaction.product.images && transaction.product.images.length > 0 ? (
+                                    {transaction.product?.images && transaction.product.images.length > 0 ? (
                                         <img
                                             src={`/storage/${transaction.product.images[0]}`}
                                             alt={transaction.product.name}
@@ -166,10 +86,10 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                         </div>
                                     )}
                                     <div className="flex-1">
-                                        <h3 className="font-semibold text-lg">{transaction.product.name}</h3>
+                                        <h3 className="font-semibold text-lg">{transaction.product?.name || 'Sản phẩm không xác định'}</h3>
                                         <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                                             <Store className="h-4 w-4" />
-                                            <span>{transaction.product.store.store_name}</span>
+                                            <span>{transaction.product?.store?.store_name || 'Cửa hàng không xác định'}</span>
                                         </div>
                                         <p className="text-2xl font-bold text-green-600 mt-2">
                                             {formatVND(transaction.amount)}
@@ -177,7 +97,7 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <p className="text-gray-700">{transaction.product.description}</p>
+                                    <p className="text-gray-700">{transaction.product?.description || ''}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -201,10 +121,36 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                         </div>
                                     </div>
 
+                                    {/* Pending Confirmation */}
+                                    <div className="flex items-center gap-3">
+                                        <div className={`h-5 w-5 rounded-full border-2 ${
+                                            transaction.status === 'pending' ? 'border-orange-600 bg-orange-100' :
+                                            ['processing', 'completed', 'disputed'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
+                                            'border-gray-300'
+                                        }`}>
+                                            {['processing', 'completed', 'disputed'].includes(transaction.status) && (
+                                                <CheckCircle className="h-5 w-5 text-white" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Chờ xác nhận</p>
+                                            {transaction.status === 'pending' && (
+                                                <p className="text-sm text-gray-600">
+                                                    Chờ người bán xác nhận đơn hàng
+                                                </p>
+                                            )}
+                                            {transaction.confirmed_at && (
+                                                <p className="text-sm text-gray-600">
+                                                    Đã xác nhận: {formatDate(transaction.confirmed_at)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     {/* Processing */}
                                     <div className="flex items-center gap-3">
                                         <div className={`h-5 w-5 rounded-full border-2 ${
-                                            transaction.status === 'processing' ? 'border-yellow-600 bg-yellow-100' :
+                                            transaction.status === 'processing' ? 'border-blue-600 bg-blue-100' :
                                             ['completed', 'disputed'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
                                             'border-gray-300'
                                         }`}>
@@ -213,16 +159,19 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                             )}
                                         </div>
                                         <div>
-                                            <p className="font-medium">Đang xử lý</p>
+                                            <p className="font-medium">Đang giao dịch</p>
                                             {transaction.status === 'processing' && (
-                                                <p className="text-sm text-gray-600">
-                                                    Chờ xác nhận từ người mua
-                                                    {transaction.auto_complete_at && timeUntilAutoComplete > 0 && (
-                                                        <span className="block">
-                                                            Tự động hoàn thành: {formatDate(transaction.auto_complete_at)}
-                                                        </span>
+                                                <div className="text-sm text-gray-600">
+                                                    <p>Chờ xác nhận từ người mua</p>
+                                                    {transaction.auto_complete_at && (
+                                                        <div className="mt-2">
+                                                            <AutoCompleteCountdown 
+                                                                autoCompleteAt={transaction.auto_complete_at}
+                                                                className="text-xs"
+                                                            />
+                                                        </div>
                                                     )}
-                                                </p>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -247,8 +196,18 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                         <div className="flex items-center gap-3">
                                             <AlertTriangle className="h-5 w-5 text-red-600" />
                                             <div>
-                                                <p className="font-medium">Đang khiếu nại</p>
+                                                <p className="font-medium">Đang tranh chấp</p>
                                                 <p className="text-sm text-gray-600">Giao dịch đang được xem xét</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {transaction.status === 'cancelled' && (
+                                        <div className="flex items-center gap-3">
+                                            <AlertTriangle className="h-5 w-5 text-gray-600" />
+                                            <div>
+                                                <p className="font-medium">Giao dịch đã hủy</p>
+                                                <p className="text-sm text-gray-600">Giao dịch đã bị hủy bỏ</p>
                                             </div>
                                         </div>
                                     )}
@@ -256,50 +215,8 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                             </CardContent>
                         </Card>
 
-                        {/* Chat Section */}
-                        {transaction.chats.length > 0 && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <MessageSquare className="h-5 w-5" />
-                                        Tin nhắn giao dịch
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        {transaction.chats.map((chat) => (
-                                            <div
-                                                key={chat.id}
-                                                className={`flex ${chat.sender.id === currentUser.id ? 'justify-end' : 'justify-start'}`}
-                                            >
-                                                <div className={`max-w-xs px-3 py-2 rounded-lg ${
-                                                    chat.sender.id === currentUser.id
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-100 text-gray-900'
-                                                }`}>
-                                                    <p className="text-sm">{chat.message}</p>
-                                                    <p className={`text-xs mt-1 ${
-                                                        chat.sender.id === currentUser.id ? 'text-blue-100' : 'text-gray-500'
-                                                    }`}>
-                                                        {formatDate(chat.created_at)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="mt-4">
-                                        <Button 
-                                            variant="outline" 
-                                            className="w-full"
-                                            onClick={() => router.get(`/customer/chat/transaction/store/${transaction.id}`)}
-                                        >
-                                            <MessageSquare className="h-4 w-4 mr-2" />
-                                            Mở phòng chat
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {/* Chat Section - commented out as not part of main interface */}
+                        {/* TODO: Add chats to StoreTransaction interface if needed */}
                     </div>
 
                     {/* Actions Sidebar */}
@@ -316,14 +233,14 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Người mua:</span>
                                     <span className={`font-medium ${isBuyer ? 'text-blue-600' : ''}`}>
-                                        {transaction.buyer.username}
+                                        {transaction.buyer?.username || 'N/A'}
                                         {isBuyer && ' (Bạn)'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Người bán:</span>
                                     <span className={`font-medium ${isSeller ? 'text-blue-600' : ''}`}>
-                                        {transaction.seller.username}
+                                        {transaction.seller?.username || 'N/A'}
                                         {isSeller && ' (Bạn)'}
                                     </span>
                                 </div>
@@ -344,17 +261,15 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                     <span className="text-gray-600">Phí giao dịch:</span>
                                     <span className="font-medium">{formatVND(transaction.fee)}</span>
                                 </div>
-                                <hr />
+                                   
                                 <div className="flex justify-between font-semibold">
                                     <span>Tổng cộng:</span>
-                                    <span>{formatVND(transaction.amount + transaction.fee)}</span>
+                                    <span>{formatVND(amount + fee, { maximumFractionDigits: 0 })}</span>
                                 </div>
                                 {isSeller && (
-                                    <div className="pt-2 border-t">
-                                        <div className="flex justify-between text-green-600 font-medium">
-                                            <span>Bạn nhận được:</span>
-                                            <span>{formatVND(transaction.amount - transaction.fee)}</span>
-                                        </div>
+                                    <div className="flex justify-between text-green-600 font-medium">
+                                        <span>Bạn nhận được:</span>
+                                        <span>{formatVND(transaction.amount * 0.99)}</span>
                                     </div>
                                 )}
                             </CardContent>
@@ -366,39 +281,12 @@ export default function TransactionDetail({ transaction, currentUser, isBuyer, i
                                 <CardTitle>Hành động</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                                {/* Complete transaction (buyer only, processing status) */}
-                                {isBuyer && transaction.status === 'processing' && (
-                                    <Button 
-                                        className="w-full"
-                                        onClick={handleCompleteTransaction}
-                                        disabled={isCompleting}
-                                    >
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        {isCompleting ? 'Đang xử lý...' : 'Xác nhận đã nhận hàng'}
-                                    </Button>
-                                )}
-
-                                {/* Create dispute */}
-                                {transaction.status === 'processing' && (
-                                    <Button 
-                                        variant="destructive" 
-                                        className="w-full"
-                                        onClick={handleCreateDispute}
-                                    >
-                                        <Shield className="h-4 w-4 mr-2" />
-                                        Tạo khiếu nại
-                                    </Button>
-                                )}
-
-                                {/* Chat button */}
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full"
-                                    onClick={() => router.get(`/customer/chat/transaction/store/${transaction.id}`)}
-                                >
-                                    <MessageSquare className="h-4 w-4 mr-2" />
-                                    Chat với {isBuyer ? 'người bán' : 'người mua'}
-                                </Button>
+                                <StoreTransactionActions 
+                                    transaction={transaction}
+                                    isBuyer={isBuyer}
+                                    size="default"
+                                    variant="full"
+                                />
                             </CardContent>
                         </Card>
                     </div>

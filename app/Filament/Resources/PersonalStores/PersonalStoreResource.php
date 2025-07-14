@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PersonalStores;
 use App\Filament\Resources\PersonalStores\Pages\CreatePersonalStore;
 use App\Filament\Resources\PersonalStores\Pages\EditPersonalStore;
 use App\Filament\Resources\PersonalStores\Pages\ListPersonalStores;
+use App\Filament\Resources\PersonalStores\RelationManagers;
 use App\Filament\Resources\PersonalStores\Schemas\PersonalStoreForm;
 use App\Filament\Resources\PersonalStores\Tables\PersonalStoresTable;
 use App\Models\PersonalStore;
@@ -44,7 +45,8 @@ class PersonalStoreResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ProductsRelationManager::class,
+            RelationManagers\TransactionsRelationManager::class,
         ];
     }
 

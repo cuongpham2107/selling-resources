@@ -5,6 +5,8 @@ namespace App\Filament\Resources\IntermediateTransactions;
 use App\Filament\Resources\IntermediateTransactions\Pages\CreateIntermediateTransaction;
 use App\Filament\Resources\IntermediateTransactions\Pages\EditIntermediateTransaction;
 use App\Filament\Resources\IntermediateTransactions\Pages\ListIntermediateTransactions;
+use App\Filament\Resources\IntermediateTransactions\Pages\ViewIntermediateTransaction;
+use App\Filament\Resources\IntermediateTransactions\RelationManagers;
 use App\Filament\Resources\IntermediateTransactions\Schemas\IntermediateTransactionForm;
 use App\Filament\Resources\IntermediateTransactions\Tables\IntermediateTransactionsTable;
 use App\Models\IntermediateTransaction;
@@ -43,7 +45,7 @@ class IntermediateTransactionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ChatsRelationManager::class,
         ];
     }
 
@@ -52,6 +54,7 @@ class IntermediateTransactionResource extends Resource
         return [
             'index' => ListIntermediateTransactions::route('/'),
             'create' => CreateIntermediateTransaction::route('/create'),
+            'view' => ViewIntermediateTransaction::route('/{record}'),
             'edit' => EditIntermediateTransaction::route('/{record}/edit'),
         ];
     }

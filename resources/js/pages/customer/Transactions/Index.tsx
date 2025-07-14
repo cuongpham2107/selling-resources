@@ -36,7 +36,7 @@ export default function TransactionsIndex({ transactions, filters = {} }: Transa
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
     const [roleFilter, setRoleFilter] = useState(filters?.role || '');
-
+    console.log(transactions);
     const handleFilter = () => {
         const searchParams = new URLSearchParams();
         if (search) searchParams.set('search', search);

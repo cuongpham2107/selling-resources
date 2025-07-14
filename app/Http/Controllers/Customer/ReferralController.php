@@ -23,7 +23,7 @@ class ReferralController extends BaseCustomerController
 
         // Get referrals made by this customer
         $referrals = Referral::where('referrer_id', $this->customer->id)
-            ->with(['referred:id,username,created_at'])
+            ->with(['referred:id,username,email,created_at'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -49,6 +49,7 @@ class ReferralController extends BaseCustomerController
             'referred_customers' => $referrals,
             'referral_earnings' => PointTransaction::where('customer_id', $this->customer->id)
                 ->where('type', 'referral_bonus')
+                ->with('relatedCustomer:id,username,email')
                 ->orderBy('created_at', 'desc')
                 ->take(10)
                 ->get(),

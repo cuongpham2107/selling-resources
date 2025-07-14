@@ -82,7 +82,7 @@ export default function Create({ store }: Props) {
         <CustomerLayout>
             <Head title="Tạo sản phẩm mới" />
 
-            <div className="container mx-auto py-6">
+            <div className="container mx-auto max-w-5xl py-6">
                 <div className="mb-6">
                     <Link
                         href={route('customer.products.index')}

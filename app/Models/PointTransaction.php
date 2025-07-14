@@ -153,10 +153,10 @@ class PointTransaction extends Model
      * 
      * Lấy thuộc tính số lượng đã được định dạng theo kiểu Việt Nam
      * 
-     * @return string Số điểm đã được định dạng (VD: "1.000 C")
+     * @return string Số điểm đã được định dạng (VD: "1.000 điểm")
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->amount, 0, ',', '.') . ' C';
+        return number_format($this->amount, 0, ',', '.') . ' điểm';
     }
 }

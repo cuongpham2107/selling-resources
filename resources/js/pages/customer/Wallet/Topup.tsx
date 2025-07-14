@@ -72,11 +72,11 @@ export default function Topup() {
                 paymentMethodInput.value = paymentMethod;
                 form.appendChild(paymentMethodInput);
                 
-                console.log('Form data:', {
-                    _token: csrfToken,
-                    amount: amount,
-                    payment_method: paymentMethod
-                });
+                // console.log('Form data:', {
+                //     _token: csrfToken,
+                //     amount: amount,
+                //     payment_method: paymentMethod
+                // });
                 
                 document.body.appendChild(form);
                 form.submit();

@@ -15,27 +15,28 @@ class MarketplaceController extends BaseCustomerController
      * Display all available products from all stores
      * 
      * Hiển thị tất cả sản phẩm có sẵn từ tất cả cửa hàng
+     * Logic: Lấy sản phẩm từ tất cả store active, loại trừ store của chính user, hỗ trợ filter và search
      */
     public function index(Request $request): Response
     {
-        $customer = $this->getCustomer(); // Use BaseCustomerController method
-        
+        $customer = $this->getCustomer(); // Lấy thông tin customer hiện tại
+        // Xây dựng query cơ bản: lấy sản phẩm có sẵn từ các store hoạt động
         $query = StoreProduct::query()
             ->with(['store:id,store_name,rating,is_verified'])
             ->whereHas('store', function ($q) use ($customer) {
-                $q->where('is_active', true)
-                  ->where('is_locked', false);
+                $q->where('is_active', true)  // Store phải đang hoạt động
+                  ->where('is_locked', false); // Store không bị khóa
                   
-                // Exclude customer's own store if they have one
+                // Loại trừ store của chính customer (không hiển thị sản phẩm của mình)
                 if ($customer && $customer->personalStore) {
                     $q->where('id', '!=', $customer->personalStore->id);
                 }
             })
-            ->where('is_active', true)
-            ->where('is_sold', false)
-            ->where('is_deleted', false);
+            ->where('is_active', true)   // Sản phẩm phải đang active
+            ->where('is_sold', false)    // Sản phẩm chưa được bán
+            ->where('is_deleted', false); // Sản phẩm chưa bị xóa
 
-        // Search functionality
+        // Tính năng tìm kiếm theo tên và mô tả sản phẩm
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
@@ -44,12 +45,12 @@ class MarketplaceController extends BaseCustomerController
             });
         }
 
-        // Category filter (if needed later)
+        // Filter theo danh mục (có thể mở rộng sau)
         if ($request->filled('category')) {
             // Add category filtering logic here
         }
 
-        // Price range filter
+        // Filter theo khoảng giá
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->get('min_price'));
         }
@@ -57,37 +58,39 @@ class MarketplaceController extends BaseCustomerController
             $query->where('price', '<=', $request->get('max_price'));
         }
 
-        // Store filter
+        // Filter theo store cụ thể
         if ($request->filled('store_id')) {
             $query->where('store_id', $request->get('store_id'));
         }
 
-        // Sorting
+        // Sắp xếp kết quả theo nhiều tiêu chí
         $sortBy = $request->get('sort', 'created_at');
         $sortOrder = $request->get('order', 'desc');
         
         switch ($sortBy) {
             case 'price_low':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('price', 'asc'); // Giá thấp đến cao
                 break;
             case 'price_high':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('price', 'desc'); // Giá cao đến thấp
                 break;
             case 'name':
-                $query->orderBy('name', 'asc');
+                $query->orderBy('name', 'asc'); // Theo tên A-Z
                 break;
             case 'popular':
+                // Sắp xếp theo độ phổ biến (số lần bán)
                 $query->withCount(['transactions as sales_count' => function ($q) {
                     $q->where('status', 'completed');
                 }])->orderBy('sales_count', 'desc');
                 break;
             default:
-                $query->orderBy('created_at', 'desc');
+                $query->orderBy('created_at', 'desc'); // Mới nhất trước
         }
 
+        // Phân trang kết quả (4 sản phẩm/trang) và giữ lại query parameters
         $products = $query->paginate(4)->withQueryString();
 
-        // Get marketplace statistics (excluding customer's own store)
+        // Tính toán thống kê marketplace (loại trừ store của customer)
         $stats = [
             'total_products' => StoreProduct::available()->fromActiveStores()
                 ->when($customer && $customer->personalStore, function ($q) use ($customer) {
@@ -101,23 +104,23 @@ class MarketplaceController extends BaseCustomerController
                 })
                 ->count(),
             'featured_stores' => PersonalStore::where('is_active', true)
-                ->where('is_verified', true)
+                ->where('is_verified', true) // Store đã được verify
                 ->where('is_locked', false)
                 ->when($customer && $customer->personalStore, function ($q) use ($customer) {
                     $q->where('id', '!=', $customer->personalStore->id);
                 })
-                ->orderBy('rating', 'desc')
+                ->orderBy('rating', 'desc') // Sắp xếp theo rating cao nhất
                 ->limit(6)
                 ->get(['id', 'store_name', 'rating', 'avatar']),
         ];
 
-        // Get popular stores for filter (excluding customer's own store)
+        // Lấy danh sách store phổ biến để làm filter (loại trừ store của customer)
         $popularStores = PersonalStore::where('is_active', true)
             ->where('is_locked', false)
             ->when($customer && $customer->personalStore, function ($q) use ($customer) {
                 $q->where('id', '!=', $customer->personalStore->id);
             })
-            ->orderBy('total_sales', 'desc')
+            ->orderBy('total_sales', 'desc') // Sắp xếp theo số lượng bán
             ->limit(10)
             ->get(['id', 'store_name']);
         return Inertia::render('customer/Marketplace/Index', [
@@ -277,32 +280,33 @@ class MarketplaceController extends BaseCustomerController
     /**
      * Purchase a product
      * 
-     * Mua một sản phẩm
+     * Mua một sản phẩm từ marketplace
+     * Logic: Kiểm tra tính hợp lệ → Tạo StoreTransaction → Trừ tiền buyer → Đánh dấu sản phẩm đã bán
      */
     public function purchase(Request $request, StoreProduct $product)
     {
        
-        // Validate product availability
+        // Bước 1: Kiểm tra tính khả dụng của sản phẩm
         if (!$product->is_active || $product->is_sold || $product->is_deleted) {
             return back()->withErrors(['message' => 'Sản phẩm không còn khả dụng.']);
         }
 
-        // Check if store is active
+        // Bước 2: Kiểm tra trạng thái store
         if (!$product->store->is_active || $product->store->is_locked) {
             return back()->withErrors(['message' => 'Cửa hàng không hoạt động.']);
         }
 
-        // Check if buyer is not the seller
+        // Bước 3: Kiểm tra không thể tự mua sản phẩm của mình
         if ($product->store->owner_id === $this->customer->id) {
             return back()->withErrors(['message' => 'Không thể mua sản phẩm của chính mình.']);
         }
 
-        // Check if customer has enough balance
+        // Bước 4: Kiểm tra số dư ví đủ để mua
         if (!$this->customer->balance->hasEnoughBalance($product->price)) {
             return back()->withErrors(['message' => 'Số dư ví không đủ để thực hiện giao dịch.']);
         }
 
-        // Generate unique transaction code
+        // Bước 5: Tạo mã giao dịch unique theo format XXXX-XXXX-XXXX-XXXX
         do {
             $transactionCode = strtoupper(bin2hex(random_bytes(8)));
             $transactionCode = substr($transactionCode, 0, 4) . '-' .
@@ -311,52 +315,137 @@ class MarketplaceController extends BaseCustomerController
                                substr($transactionCode, 12, 4);
         
         } while (\App\Models\StoreTransaction::where('transaction_code', $transactionCode)->exists());
-
-        try {
+        // try {
+            // Bước 6: Bắt đầu database transaction để đảm bảo tính nhất quán
             DB::beginTransaction();
 
-            // Create store transaction
+            // Bước 7: Tạo store transaction với trạng thái PENDING (chờ xác nhận từ người bán)
             $transaction = \App\Models\StoreTransaction::create([
                 'transaction_code' => $transactionCode,
                 'buyer_id' => $this->customer->id,
                 'seller_id' => $product->store->owner_id,
                 'product_id' => $product->id,
                 'amount' => $product->price,
-                'fee' => $product->price * 0.01, // 1% fee
-                'status' => 'processing',
+                'fee' => $product->price * 0.01, // Phí 1% cho store transaction
+                'status' => \App\States\StoreTransaction\PendingState::class,
             ]);
-            
 
-            //Đặt thời gian tự động hoàn thành (mặc định là 72 giờ)
+            // Bước 8: Đặt thời gian tự động hoàn thành (mặc định 72 giờ)
             $transaction->setAutoCompleteTime();
-
-            // Deduct money from buyer's balance
+            // Bước 9: Trừ tiền từ số dư của buyer
             if (!$this->customer->balance->deductBalance($product->price)) {
                 throw new \Exception('Không thể trừ tiền từ số dư.');
             }
-            // Mark product as sold
+            
+            // Bước 10: Đánh dấu sản phẩm đã được bán
             $product->update(['is_sold' => true]);
-
-            // Create wallet transaction for buyer
+           
+            // Bước 11: Tạo bản ghi wallet transaction để tracking
             \App\Models\WalletTransaction::create([
                 'customer_id' => $this->customer->id,
-                'type' => 'debit',
+                'type' => 'debit', // Trừ tiền
                 'transaction_type' => 'store_purchase',
                 'amount' => $product->price,
+                'fee' => $transaction->fee,
                 'description' => "Mua sản phẩm: {$product->name}",
                 'reference_id' => $transaction->id,
-                'status' => 'completed',
+                'status' => 'processing',
+                'processed_at' => now(),
+                'completed_at' => now(),
             ]);
 
+            // Bước 12: Commit transaction nếu tất cả thành công
             DB::commit();
 
             return redirect()->route('customer.store.transactions.show', $transaction)
                 ->with('success', 'Đã mua sản phẩm thành công! Giao dịch sẽ tự động hoàn thành sau 72 giờ.');
 
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['message' => 'Có lỗi xảy ra khi xử lý giao dịch. Vui lòng thử lại.']);
+        // } catch (\Exception $e) {
+        //     // Bước 13: Rollback nếu có lỗi xảy ra
+        //     DB::rollback();
+        //     return back()->withErrors(['message' => 'Có lỗi xảy ra khi xử lý giao dịch. Vui lòng thử lại.']);
+        // }
+    }
+
+    /**
+     * Mua sản phẩm - tạo giao dịch cửa hàng
+     * Logic: Validate sản phẩm → Kiểm tra số dư → Tạo StoreTransaction → Khóa tiền → Giảm số lượng sản phẩm
+     */
+    public function buyProduct(Request $request, StoreProduct $product): \Illuminate\Http\RedirectResponse
+    {
+        // Validate product availability
+        if (!$product->is_active || $product->is_sold || $product->is_deleted) {
+            return back()->withErrors(['product' => 'Sản phẩm không có sẵn']);
         }
+
+        // Check if user is trying to buy their own product
+        if ($product->store->customer_id === $this->customer->id) {
+            return back()->withErrors(['product' => 'Không thể mua sản phẩm của chính mình']);
+        }
+
+        // Calculate fee for store transaction (1% cố định)
+        $fee = $this->calculateStoreTransactionFee($product->price);
+        $totalAmount = $product->price + $fee;
+
+        // Check if customer has enough balance
+        if ($this->customer->wallet_balance < $totalAmount) {
+            return back()->withErrors(['balance' => 'Số dư không đủ để mua sản phẩm này. Cần: ' . number_format($totalAmount) . ' VNĐ']);
+        }
+
+        try {
+            DB::transaction(function () use ($product, $fee, $totalAmount) {
+                // Create store transaction với trạng thái PENDING
+                $transaction = \App\Models\StoreTransaction::create([
+                    'transaction_code' => 'ST-' . time() . '-' . rand(1000, 9999),
+                    'buyer_id' => $this->customer->id,
+                    'seller_id' => $product->store->customer_id,
+                    'product_id' => $product->id,
+                    'amount' => $product->price,
+                    'fee' => $fee,
+                    'auto_complete_at' => now()->addDays(3), // 3 ngày tự động hoàn thành
+                    'description' => "Mua sản phẩm: {$product->name}",
+                    'status' => \App\States\StoreTransaction\PendingState::class,
+                ]);
+
+                // Lock buyer's money
+                $this->customer->decrement('wallet_balance', $totalAmount);
+
+                // Mark product as sold
+                $product->update([
+                    'is_sold' => true,
+                    'sold_at' => now(),
+                ]);
+
+                // Create wallet transaction record for buyer
+                \App\Models\WalletTransaction::create([
+                    'customer_id' => $this->customer->id,
+                    'type' => 'debit',
+                    'transaction_type' => 'store_purchase',
+                    'amount' => $totalAmount,
+                    'description' => "Mua sản phẩm: {$product->name}",
+                    'reference_id' => $transaction->id,
+                    'status' => 'completed',
+                ]);
+            });
+
+            return redirect()->route('customer.store.transactions.index')
+                ->with('success', 'Đã tạo giao dịch thành công! Bạn có thể chat với người bán để trao đổi sản phẩm.');
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi tạo giao dịch: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Tính phí giao dịch cửa hàng (1% cố định theo README)
+     * 
+     * @param float $amount
+     * @return float
+     */
+    private function calculateStoreTransactionFee(float $amount): float
+    {
+        // Phí cố định 1% cho giao dịch cửa hàng
+        return round($amount * 0.01, 2);
     }
 
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Referrals\Schemas;
 
+use App\Enums\ReferralStatus;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -31,27 +32,40 @@ class ReferralForm
                             ->required()
                             ->searchable()
                             ->preload(),
-                            
+
+                       
                         TextInput::make('total_points_earned')
                             ->label('Tổng C kiếm được')
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
+                            ->step(0.01)
                             ->suffix('C')
-                             ->mask(RawJs::make('$money($input)'))
-                             ->stripCharacters(','),
+                            ->helperText('Tổng số điểm thưởng đã kiếm được từ giới thiệu')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
                             
                         TextInput::make('successful_transactions')
                             ->label('Số giao dịch thành công')
                             ->numeric()
                             ->default(0)
-                            ->minValue(0),
+                            ->minValue(0)
+                            ->helperText('Số lượng giao dịch thành công đã thực hiện'),
+                        Select::make('status')
+                            ->label('Trạng thái')
+                            ->options(ReferralStatus::getOptions())
+                            ->default(ReferralStatus::PENDING->value)
+                            ->required()
+                            ->helperText('Trạng thái hiện tại của mối quan hệ giới thiệu')
+                            ->selectablePlaceholder(false),
                             
                         DateTimePicker::make('first_transaction_at')
                             ->label('Lần giao dịch đầu tiên')
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('Thời gian thực hiện giao dịch đầu tiên (tự động cập nhật)'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 }

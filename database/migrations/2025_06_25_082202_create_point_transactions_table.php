@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('related_transaction_type')->nullable(); // 'intermediate' hoặc 'store'
             $table->unsignedBigInteger('related_transaction_id')->nullable();
             $table->unsignedBigInteger('related_customer_id')->nullable(); // Người gửi/nhận
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->timestamps();
 
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');

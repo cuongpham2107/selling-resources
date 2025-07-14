@@ -36,11 +36,11 @@ export function CustomerNavbar() {
                         </button>
                         
                         <Link href="/" className="flex items-center ml-2 lg:ml-0">
-                            <img 
+                            {/* <img 
                                 src="/logo.svg" 
                                 alt="Giao Dịch MMO" 
                                 className="h-8 w-8 sm:h-10 sm:w-10"
-                            />
+                            /> */}
                             <span className="ml-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white hidden sm:block">
                                 Giao Dịch MMO
                             </span>
@@ -69,6 +69,12 @@ export function CustomerNavbar() {
                             className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                         >
                             Giao dịch
+                        </Link>
+                        <Link 
+                            href="/customer/purchases" 
+                            className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                        >
+                            Mua hàng
                         </Link>
                         <Link 
                             href="/customer/store" 

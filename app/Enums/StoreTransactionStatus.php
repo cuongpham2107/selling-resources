@@ -4,10 +4,11 @@ namespace App\Enums;
 
 enum StoreTransactionStatus: string
 {
-    case PROCESSING = 'processing';
-    case COMPLETED = 'completed';
-    case DISPUTED = 'disputed';
-    case CANCELLED = 'cancelled';
+    case PENDING = 'pending';           // Chờ xác nhận từ người bán
+    case PROCESSING = 'processing';     // Đang giao dịch (đã xác nhận, có thể chat)
+    case COMPLETED = 'completed';       // Hoàn thành
+    case DISPUTED = 'disputed';         // Tranh chấp
+    case CANCELLED = 'cancelled';       // Đã hủy
 
     /**
      * Get Vietnamese label for the enum value
@@ -19,7 +20,8 @@ enum StoreTransactionStatus: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::PROCESSING => 'Đang xử lý',
+            self::PENDING => 'Chờ xác nhận',
+            self::PROCESSING => 'Đang giao dịch',
             self::COMPLETED => 'Hoàn thành',
             self::DISPUTED => 'Tranh chấp',
             self::CANCELLED => 'Đã hủy',
@@ -36,10 +38,11 @@ enum StoreTransactionStatus: string
     public function getColor(): string
     {
         return match ($this) {
-            self::PROCESSING => 'primary',
-            self::COMPLETED => 'success',
-            self::DISPUTED => 'danger',
-            self::CANCELLED => 'danger',
+            self::PENDING => 'warning',      // Màu vàng cho chờ xác nhận
+            self::PROCESSING => 'primary',   // Màu xanh cho đang giao dịch
+            self::COMPLETED => 'success',    // Màu xanh lá cho hoàn thành
+            self::DISPUTED => 'danger',      // Màu đỏ cho tranh chấp
+            self::CANCELLED => 'secondary',  // Màu xám cho đã hủy
         };
     }
 
@@ -53,10 +56,11 @@ enum StoreTransactionStatus: string
     public function getNextStates(): array
     {
         return match ($this) {
-            self::PROCESSING => [self::COMPLETED, self::DISPUTED, self::CANCELLED],
-            self::COMPLETED => [], // Final state
-            self::DISPUTED => [self::COMPLETED, self::CANCELLED], // Can be resolved
-            self::CANCELLED => [], // Final state
+            self::PENDING => [self::PROCESSING, self::CANCELLED], // Từ chờ xác nhận → đang giao dịch hoặc hủy
+            self::PROCESSING => [self::COMPLETED, self::DISPUTED, self::CANCELLED], // Từ đang giao dịch → hoàn thành/tranh chấp/hủy
+            self::COMPLETED => [], // Trạng thái cuối
+            self::DISPUTED => [self::COMPLETED, self::CANCELLED], // Từ tranh chấp → giải quyết
+            self::CANCELLED => [], // Trạng thái cuối
         };
     }
 
@@ -81,7 +85,7 @@ enum StoreTransactionStatus: string
      */
     public function canBeCancelled(): bool
     {
-        return $this === self::PROCESSING;
+        return in_array($this, [self::PENDING, self::PROCESSING]);
     }
 
     /**
@@ -93,7 +97,7 @@ enum StoreTransactionStatus: string
      */
     public function canBeDisputed(): bool
     {
-        return $this === self::PROCESSING;
+        return $this === self::PROCESSING; // Chỉ khi đang giao dịch mới có thể tranh chấp
     }
 
     /**
@@ -105,7 +109,31 @@ enum StoreTransactionStatus: string
      */
     public function canBeCompleted(): bool
     {
-        return $this === self::PROCESSING;
+        return $this === self::PROCESSING; // Chỉ khi đang giao dịch mới có thể hoàn thành
+    }
+
+    /**
+     * Check if transaction can be confirmed (seller action)
+     * 
+     * Kiểm tra xem giao dịch có thể được xác nhận hay không (hành động của người bán)
+     * 
+     * @return bool
+     */
+    public function canBeConfirmed(): bool
+    {
+        return $this === self::PENDING; // Chỉ khi chờ xác nhận mới có thể xác nhận
+    }
+
+    /**
+     * Check if chat is available for this transaction
+     * 
+     * Kiểm tra xem có thể chat trong giao dịch này hay không
+     * 
+     * @return bool
+     */
+    public function canChat(): bool
+    {
+        return in_array($this, [self::PROCESSING, self::DISPUTED]); // Chỉ chat khi đang giao dịch hoặc tranh chấp
     }
 
     /**

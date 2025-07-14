@@ -19,6 +19,7 @@ use App\Http\Controllers\Customer\SettingsController;
 use App\Http\Controllers\Customer\StoreController;
 use App\Http\Controllers\Customer\StoreTransactionController;
 use App\Http\Controllers\Customer\TransactionController;
+use App\Http\Controllers\Customer\PurchaseController;
 use App\Http\Controllers\Customer\WalletController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -71,8 +72,14 @@ Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'cust
         Route::get('/', [TransactionController::class, 'index'])->name('index');
         Route::get('create', [TransactionController::class, 'create'])->name('create');
         Route::post('/', [TransactionController::class, 'store'])->name('store');
+        Route::post('calculate-fee', [TransactionController::class, 'calculateFee'])->name('calculate-fee');
         Route::get('{transaction}', [TransactionController::class, 'show'])->name('show');
         Route::patch('{transaction}', [TransactionController::class, 'update'])->name('update');
+    });
+
+    // Purchases (transactions where customer is buyer)
+    Route::prefix('purchases')->name('purchases.')->group(function () {
+        Route::get('/', [PurchaseController::class, 'index'])->name('index');
     });
 
     // Store routes
@@ -90,6 +97,8 @@ Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'cust
         Route::prefix('transactions')->name('transactions.')->group(function () {
             Route::get('/', [StoreTransactionController::class, 'index'])->name('index');
             Route::get('{transaction}', [StoreTransactionController::class, 'show'])->name('show');
+            Route::post('{transaction}/confirm', [StoreTransactionController::class, 'confirm'])->name('confirm');
+            Route::post('{transaction}/cancel', [StoreTransactionController::class, 'cancel'])->name('cancel');
             Route::post('{transaction}/complete', [StoreTransactionController::class, 'complete'])->name('complete');
             Route::post('{transaction}/dispute', [StoreTransactionController::class, 'dispute'])->name('dispute');
         });
@@ -160,17 +169,6 @@ Route::prefix('customer')->name('customer.')->middleware(['customer.auth', 'cust
         // VNPay routes
         Route::get('vnpay/return', [WalletController::class, 'vnpayReturn'])->name('vnpay.return');
         Route::post('vnpay/callback', [WalletController::class, 'vnpayCallback'])->name('vnpay.callback');
-    });
-
-    Route::prefix('points')->name('points.')->group(function () {
-        Route::get('/', [PointController::class, 'index'])->name('index');
-        Route::get('exchange', [PointController::class, 'exchange'])->name('exchange');
-        Route::post('exchange', [PointController::class, 'processExchange'])->name('exchange.process');
-        Route::get('spend', [PointController::class, 'spend'])->name('spend');
-        Route::post('spend', [PointController::class, 'processSpend'])->name('spend.process');
-        Route::get('history', [PointController::class, 'history'])->name('history');
-        Route::get('earn', [PointController::class, 'earn'])->name('earn');
-        Route::post('earn', [PointController::class, 'claimEarning'])->name('earn.claim');
     });
 
     // Referrals

@@ -22,8 +22,6 @@ import {
     ShoppingCart,
     Store,
     Package,
-    Heart,
-    Share2,
     Verified,
     Eye,
     Calendar,
@@ -99,7 +97,7 @@ export default function ProductDetail({ product, relatedProducts, similarProduct
         <CustomerLayout>
             <Head title={`${product.name} - Chi tiết sản phẩm`} />
 
-            <div className="space-y-6">
+            <div className="mx-auto max-w-6xl space-y-6">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Link href="/customer/marketplace" className="hover:text-blue-600">
@@ -319,10 +317,7 @@ export default function ProductDetail({ product, relatedProducts, similarProduct
                                                     </DialogFooter>
                                                 </DialogContent>
                                             </Dialog>
-                                            <Button variant="outline" className="flex-1">
-                                                <Heart className="h-4 w-4 mr-2" />
-                                                Yêu thích
-                                            </Button>
+                                            
                                         </div>
                                     </div>
                                 )}

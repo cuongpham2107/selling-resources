@@ -26,7 +26,7 @@ class CustomerPointsTable
                     
                 TextColumn::make('points')
                     ->label('Số C')
-                    ->formatStateUsing(fn ($state) => number_format($state) . ' C')
+                    ->formatStateUsing(fn ($state) => number_format($state) . ' điểm')
                     ->sortable(),
                     
                 TextColumn::make('updated_at')

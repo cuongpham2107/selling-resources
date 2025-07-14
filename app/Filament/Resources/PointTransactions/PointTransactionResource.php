@@ -20,11 +20,11 @@ class PointTransactionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedStar;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Quản lý C';
+    protected static string|\UnitEnum|null $navigationGroup = 'Quản lý điểm';
 
-    protected static ?string $modelLabel = 'Giao dịch C';
+    protected static ?string $modelLabel = 'Giao dịch điểm';
 
-    protected static ?string $pluralModelLabel = 'Giao dịch C';
+    protected static ?string $pluralModelLabel = 'Giao dịch điểm';
 
     protected static ?int $navigationSort = 1;
 

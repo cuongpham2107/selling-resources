@@ -46,6 +46,7 @@ class WalletTransactionsTable
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => WalletTransactionType::from($state)->label())
                     ->color(fn (string $state): string => match ($state) {
+                        'debit' => 'danger',
                         'deposit' => 'primary',
                         'withdrawal' => 'danger',
                         'transfer_out' => 'warning',

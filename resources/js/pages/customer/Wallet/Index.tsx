@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date';
-import { Wallet, Plus, Send, Download, History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Wallet, Plus, Download, History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import type { CustomerBalance, IntermediateTransaction } from '@/types';
 import { formatVND } from '@/lib/currency';
 
@@ -118,7 +118,7 @@ export default function WalletIndex({ balance, recentTransactions }: Props) {
                 </Card>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                         <Link href={route('customer.wallet.topup')}>
                             <CardContent className="p-6 text-center">
@@ -130,19 +130,6 @@ export default function WalletIndex({ balance, recentTransactions }: Props) {
                             </CardContent>
                         </Link>
                     </Card>
-
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                        <Link href={route('customer.wallet.transfer')}>
-                            <CardContent className="p-6 text-center">
-                                <Send className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                                <h3 className="font-semibold mb-2">Chuyển tiền</h3>
-                                <p className="text-sm text-gray-600">
-                                    Gửi tiền cho người dùng khác
-                                </p>
-                            </CardContent>
-                        </Link>
-                    </Card>
-
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                         <Link href={route('customer.wallet.withdraw')}>
                             <CardContent className="p-6 text-center">

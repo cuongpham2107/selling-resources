@@ -20,7 +20,7 @@ class ReferralResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Quản lý C';
+    protected static string|\UnitEnum|null $navigationGroup = 'Quản lý điểm';
 
     protected static ?string $modelLabel = 'Giới thiệu';
 

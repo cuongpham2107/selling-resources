@@ -37,15 +37,15 @@ export default function ProductsIndex({ store, products }: Props) {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">My Products</h1>
+                        <h1 className="text-3xl font-bold">Sản phẩm của tôi</h1>
                         <p className="text-gray-600">
-                            Manage your store products
+                            Quản lý sản phẩm trong cửa hàng của bạn
                         </p>
                     </div>
                     <Link href={route('customer.products.create')}>
                         <Button>
                             <Plus className="h-4 w-4 mr-2" />
-                            Add Product
+                            Thêm sản phẩm
                         </Button>
                     </Link>
                 </div>
@@ -63,11 +63,11 @@ export default function ProductsIndex({ store, products }: Props) {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>Total Products: {products.total}</span>
+                            <span>Tổng sản phẩm: {products.total}</span>
                             <span>•</span>
-                            <span>Active Products: {products.data.filter((p: ProductWithSales) => p.is_active && !p.is_sold).length}</span>
+                            <span>Sản phẩm đang hoạt động: {products.data.filter((p: ProductWithSales) => p.is_active && !p.is_sold).length}</span>
                             <span>•</span>
-                            <span>Sold Products: {products.data.filter((p: ProductWithSales) => p.is_sold).length}</span>
+                            <span>Sản phẩm đã bán: {products.data.filter((p: ProductWithSales) => p.is_sold).length}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -161,14 +161,14 @@ export default function ProductsIndex({ store, products }: Props) {
                     <Card>
                         <CardContent className="py-12 text-center">
                             <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No products yet</h3>
+                            <h3 className="text-lg font-semibold mb-2">Chưa có sản phẩm nào</h3>
                             <p className="text-gray-600 mb-4">
-                                Start selling by adding your first product to your store.
+                                Bắt đầu bán hàng bằng cách thêm sản phẩm đầu tiên vào cửa hàng của bạn.
                             </p>
                             <Link href={route('customer.products.create')}>
                                 <Button>
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Add Your First Product
+                                    Thêm sản phẩm đầu tiên
                                 </Button>
                             </Link>
                         </CardContent>

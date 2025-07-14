@@ -25,11 +25,11 @@ export function useCustomerAuth() {
         router.post('/customer/logout');
     };
 
-    const updateCustomer = (updatedData: Partial<Customer>) => {
-        // For updates, you might want to make an API call and then refresh
-        // This depends on your backend implementation
-        console.log('Customer update:', updatedData);
-    };
+    // const updateCustomer = (updatedData: Partial<Customer>) => {
+    //     // For updates, you might want to make an API call and then refresh
+    //     // This depends on your backend implementation
+    //     console.log('Customer update:', updatedData);
+    // };
 
     return {
         customer,
@@ -37,6 +37,6 @@ export function useCustomerAuth() {
         isAuthenticated,
         login,
         logout,
-        updateCustomer,
+        // updateCustomer,
     };
 }

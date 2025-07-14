@@ -15,20 +15,6 @@ export function generateReferralLink(referralCode: string): string {
 /**
  * Get transaction status color
  */
-export function getTransactionStatusColor(status: string): string {
-    const statusColors = {
-        PENDING: 'bg-yellow-100 text-yellow-800',
-        PROCESSING: 'bg-blue-100 text-blue-800',
-        COMPLETED: 'bg-green-100 text-green-800',
-        CANCELLED: 'bg-gray-100 text-gray-800',
-        DISPUTED: 'bg-red-100 text-red-800',
-        PAID: 'bg-blue-100 text-blue-800',
-        DELIVERED: 'bg-purple-100 text-purple-800',
-        REFUNDED: 'bg-orange-100 text-orange-800',
-    };
-    return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
-}
-
 
 
 /**

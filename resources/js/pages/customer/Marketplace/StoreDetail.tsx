@@ -59,7 +59,7 @@ export default function StoreDetail({ store, products, storeStats, filters }: St
         <CustomerLayout>
             <Head title={`${store.store_name} - Cửa hàng`} />
             
-            <div className="space-y-6">
+            <div className="space-y-6 mx-auto max-w-7xl">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Link href="/customer/marketplace" className="hover:text-blue-600">

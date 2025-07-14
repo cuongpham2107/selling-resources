@@ -1,12 +1,12 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
-import { MessageSquare, Users, Clock, ShoppingBag } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { MessageSquare, Users, ShoppingBag, Package, User, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import CustomerLayout from '@/layouts/CustomerLayout';
-import { getRelativeTime } from '@/lib/date';
+import { getStatusBadge } from '@/lib/config';
 
 interface UnifiedTransaction {
     id: number;
@@ -14,13 +14,15 @@ interface UnifiedTransaction {
     created_at: string;
     updated_at: string;
     status: string;
+    status_label?: string;
     amount: number;
+    fee?: number;
     buyer_id: number;
     seller_id: number;
     buyer?: { id: number; username: string };
     seller?: { id: number; username: string };
     product?: { id: number; name: string };
-    description: string;
+    description?: string;
     chat_url: string;
 }
 
@@ -49,34 +51,22 @@ interface TransactionChatPageProps {
 }
 
 export default function TransactionChat({ transactions }: TransactionChatPageProps) {
-    const getStatusBadge = (status: string) => {
-        const variants = {
-            pending: 'secondary',
-            confirmed: 'default',
-            seller_sent: 'default', 
-            buyer_received: 'default',
-            processing: 'default',
-            completed: 'secondary',
-            disputed: 'destructive',
-            cancelled: 'secondary',
-        } as const;
+    console.log(transactions);
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
 
-        const labels = {
-            pending: 'Chờ xác nhận',
-            confirmed: 'Đã xác nhận',
-            seller_sent: 'Người bán đã gửi',
-            buyer_received: 'Người mua đã nhận', 
-            processing: 'Đang xử lý',
-            completed: 'Hoàn thành',
-            disputed: 'Tranh chấp',
-            cancelled: 'Đã hủy',
-        } as const;
-
-        return (
-            <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
-                {labels[status as keyof typeof labels] || status}
-            </Badge>
-        );
+    const formatVND = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+        }).format(amount);
     };
 
     const getTransactionIcon = (type: string) => {
@@ -87,8 +77,26 @@ export default function TransactionChat({ transactions }: TransactionChatPagePro
         return type === 'store' ? 'Giao dịch cửa hàng' : 'Giao dịch trung gian';
     };
 
+    const getChatUrl = (transaction: UnifiedTransaction) => {
+        if (transaction.type === 'store') {
+            return `/customer/chat/transaction/store/${transaction.id}`;
+        } else {
+            return `/customer/chat/transaction/intermediate/${transaction.id}`;
+        }
+    };
+
+    const getTransactionTitle = (transaction: UnifiedTransaction) => {
+        if (transaction.type === 'store') {
+            return `Giao dịch #${transaction.id}`;
+        } else {
+            return transaction.description || `Giao dịch trung gian #${transaction.id}`;
+        }
+    };
+
     return (
         <CustomerLayout>
+            <Head title="Chat Giao dịch" />
+            
             <div className="space-y-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -109,7 +117,7 @@ export default function TransactionChat({ transactions }: TransactionChatPagePro
                     {transactions.data.length > 0 ? (
                         transactions.data.map((transaction) => (
                             <Card key={`${transaction.type}-${transaction.id}`} className="hover:shadow-md transition-shadow">
-                                <CardContent className="p-6">
+                                <CardContent className="px-6">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-4">
                                             <Avatar className="w-12 h-12">
@@ -120,20 +128,29 @@ export default function TransactionChat({ transactions }: TransactionChatPagePro
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center space-x-2 mb-1">
                                                     <h3 className="font-medium text-gray-900 truncate">
-                                                        {transaction.description}
+                                                        {getTransactionTitle(transaction)}
                                                     </h3>
                                                     <Badge variant="outline" className="text-xs">
                                                         {getTransactionTypeLabel(transaction.type)}
                                                     </Badge>
                                                 </div>
+                                                
+                                                {/* Product info for store transactions */}
+                                                {transaction.type === 'store' && transaction.product && (
+                                                    <div className="flex items-center space-x-2 mb-2 text-sm text-gray-600">
+                                                        <Package className="w-4 h-4" />
+                                                        <span>{transaction.product.name}</span>
+                                                    </div>
+                                                )}
+                                                
                                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                                     <span className="flex items-center">
-                                                        <Users className="w-4 h-4 mr-1" />
-                                                        {transaction.buyer?.username} ↔ {transaction.seller?.username}
+                                                        <User className="w-4 h-4 mr-1" />
+                                                        Với: {transaction.buyer?.username || transaction.seller?.username}
                                                     </span>
                                                     <span className="flex items-center">
-                                                        <Clock className="w-4 h-4 mr-1" />
-                                                        {getRelativeTime(transaction.created_at)}
+                                                        <Calendar className="w-4 h-4 mr-1" />
+                                                        {formatDate(transaction.created_at)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -141,19 +158,23 @@ export default function TransactionChat({ transactions }: TransactionChatPagePro
                                         <div className="flex items-center space-x-4">
                                             <div className="text-right">
                                                 <div className="font-medium text-lg">
-                                                    {new Intl.NumberFormat('vi-VN', {
-                                                        style: 'currency',
-                                                        currency: 'VND'
-                                                    }).format(transaction.amount)}
+                                                    {formatVND(transaction.amount)}
                                                 </div>
                                                 {getStatusBadge(transaction.status)}
                                             </div>
-                                            <Link href={transaction.chat_url}>
-                                                <Button size="sm">
-                                                    <MessageSquare className="w-4 h-4 mr-2" />
-                                                    Chat
-                                                </Button>
-                                            </Link>
+                                            {
+                                                transaction.status === 'App\\States\\IntermediateTransaction\\PendingState' || transaction.status === 'App\\States\\StoreTransaction\\PendingState' ? (
+                                                    <></>
+                                                ) :(
+                                                     <Link href={getChatUrl(transaction)}>
+                                                        <Button size="sm">
+                                                            <MessageSquare className="w-4 h-4 mr-2" />
+                                                            Chat
+                                                        </Button>
+                                                    </Link>
+                                                )
+                                            }
+                                           
                                         </div>
                                     </div>
                                 </CardContent>
@@ -166,9 +187,23 @@ export default function TransactionChat({ transactions }: TransactionChatPagePro
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                                     Chưa có giao dịch nào
                                 </h3>
-                                <p className="text-gray-500">
-                                    Bạn chưa có giao dịch nào có thể chat.
+                                <p className="text-gray-500 mb-6">
+                                    Bạn chưa có giao dịch nào có thể chat. Hãy bắt đầu mua bán để có thể trò chuyện với đối tác.
                                 </p>
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <Link href="/customer/marketplace">
+                                        <Button>
+                                            <ShoppingBag className="w-4 h-4 mr-2" />
+                                            Khám phá sản phẩm
+                                        </Button>
+                                    </Link>
+                                    <Link href="/customer/transactions">
+                                        <Button variant="outline">
+                                            <Users className="w-4 h-4 mr-2" />
+                                            Tạo giao dịch trung gian
+                                        </Button>
+                                    </Link>
+                                </div>
                             </CardContent>
                         </Card>
                     )}

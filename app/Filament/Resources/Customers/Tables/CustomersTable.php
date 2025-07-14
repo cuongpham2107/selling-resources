@@ -61,7 +61,7 @@ class CustomersTable
                 
                 TextColumn::make('points.points')
                     ->label('C')
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.') . ' C')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.') . ' điểm')
                     ->sortable(),
                 
                 TextColumn::make('created_at')

@@ -18,6 +18,7 @@
                 <dd class="mt-1">
                     @php
                         $typeColors = [
+                            'debit' => 'bg-gray-100 text-gray-800',
                             'deposit' => 'bg-blue-100 text-blue-800',
                             'withdrawal' => 'bg-red-100 text-red-800', 
                             'transfer_out' => 'bg-yellow-100 text-yellow-800',

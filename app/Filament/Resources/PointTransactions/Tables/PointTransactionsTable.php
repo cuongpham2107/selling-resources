@@ -28,34 +28,49 @@ class PointTransactionsTable
                     ->sortable(),
                     
                 BadgeColumn::make('type')
-                    ->label('Loại')
-                    ->formatStateUsing(fn ($state) => $state instanceof PointTransactionType ? $state->getLabel() : $state)
+                    ->label('Loại giao dịch')
+                    ->formatStateUsing(fn ($state) => match ($state instanceof PointTransactionType ? $state->value : $state) {
+                        'earned' => 'Kiếm được từ giao dịch',
+                        'referral_bonus' => 'Thưởng giới thiệu',
+                        'sent' => 'Gửi cho người khác',
+                        'received' => 'Nhận từ người khác',
+                        'exchanged' => 'Đổi thành tiền/hàng',
+                        'spend' => 'Tiêu dùng',
+                        'transfer' => 'Chuyển điểm',
+                        'admin_adjust' => 'Điều chỉnh bởi admin',
+                        default => $state instanceof PointTransactionType ? $state->value : $state,
+                    })
                     ->colors([
-                        'success' => [PointTransactionType::EARNED->value, PointTransactionType::EARN->value],
-                        'danger' => [PointTransactionType::SENT->value, PointTransactionType::SPEND->value], 
-                        'warning' => PointTransactionType::REFERRAL_BONUS->value,
-                        'primary' => [PointTransactionType::RECEIVED->value, PointTransactionType::TRANSFER->value],
-                        'secondary' => PointTransactionType::EXCHANGED->value,
-                        'info' => PointTransactionType::ADMIN_ADJUST->value,
+                        'success' => ['earned', 'referral_bonus', 'received'],
+                        'danger' => ['sent', 'spend', 'exchanged'], 
+                        'warning' => 'transfer',
+                        'info' => 'admin_adjust',
                     ]),
                     
                 TextColumn::make('amount')
-                    ->label('Số C')
+                    ->label('Số điểm')
                     ->formatStateUsing(function ($state, $record) {
-                        $type = $record->type instanceof PointTransactionType ? $record->type : PointTransactionType::from($record->type);
-                        $prefix = $type->isIncreasing() ? '+' : '-';
-                        return $prefix . number_format($state) . ' C';
+                        $type = $record->type instanceof PointTransactionType ? $record->type->value : $record->type;
+                        $prefix = in_array($type, ['sent', 'spend', 'exchanged', 'transfer']) ? '-' : '+';
+                        return $prefix . number_format($state) . ' điểm';
                     })
                     ->sortable(),
                     
                 TextColumn::make('balance_after')
                     ->label('Số dư sau')
-                    ->formatStateUsing(fn ($state) => number_format($state) . ' C')
+                    ->formatStateUsing(fn ($state) => number_format($state) . ' điểm')
                     ->sortable(),
                     
+                TextColumn::make('relatedCustomer.username')
+                    ->label('Người được giới thiệu')
+                    ->placeholder('N/A')
+                    ->searchable()
+                    ->toggleable(),
+                    
                 TextColumn::make('description')
-                    ->label('Mô tả')
+                    ->label('Mô tả giao dịch')
                     ->limit(50)
+                    ->placeholder('Không có mô tả')
                     ->toggleable(),
                     
                 TextColumn::make('created_at')
@@ -66,7 +81,16 @@ class PointTransactionsTable
             ->filters([
                 SelectFilter::make('type')
                     ->label('Loại giao dịch')
-                    ->options(PointTransactionType::getOptions()),
+                    ->options([
+                        'earned' => 'Kiếm được từ giao dịch',
+                        'referral_bonus' => 'Thưởng giới thiệu',
+                        'sent' => 'Gửi cho người khác',
+                        'received' => 'Nhận từ người khác',
+                        'exchanged' => 'Đổi thành tiền/hàng',
+                        'spend' => 'Tiêu dùng',
+                        'transfer' => 'Chuyển điểm',
+                        'admin_adjust' => 'Điều chỉnh bởi admin',
+                    ]),
             ])
             ->recordActions([
                 ViewAction::make(),

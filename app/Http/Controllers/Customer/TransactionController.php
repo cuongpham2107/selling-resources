@@ -16,14 +16,18 @@ class TransactionController extends BaseCustomerController
 {
     /**
      * Display a listing of transactions.
+     * 
+     * Hiển thị danh sách giao dịch trung gian của customer
+     * Logic: Lấy giao dịch mà customer tham gia (buyer hoặc seller), hỗ trợ filter và search
      */
     public function index(Request $request): Response
     {
+        // Lấy tất cả giao dịch mà customer tham gia (buyer hoặc seller)
         $query = IntermediateTransaction::where('buyer_id', $this->customer->id)
             ->orWhere('seller_id', $this->customer->id)
             ->with(['buyer', 'seller', 'disputes']);
         
-        // Apply filters
+        // Filter theo từ khóa tìm kiếm
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
@@ -36,10 +40,12 @@ class TransactionController extends BaseCustomerController
             });
         }
 
+        // Filter theo trạng thái giao dịch
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
         }
 
+        // Filter theo vai trò trong giao dịch
         if ($request->filled('role')) {
             $role = $request->get('role');
             if ($role === 'BUYER') {
@@ -73,9 +79,13 @@ class TransactionController extends BaseCustomerController
 
     /**
      * Store a newly created transaction.
+     * 
+     * Tạo giao dịch trung gian mới
+     * Logic: Validate input → Tìm partner → Tính phí → Khóa tiền (nếu buyer) → Tạo transaction
      */
     public function store(Request $request): RedirectResponse
     {
+        // Bước 1: Validate đầu vào với message tiếng Việt
         $request->validate([
             'role' => 'required|in:BUYER,SELLER',
             'partner_username' => 'required|string|exists:customers,username',
@@ -100,21 +110,22 @@ class TransactionController extends BaseCustomerController
             'duration_hours.max' => 'Thời gian giao dịch tối đa là 168 giờ (7 ngày).',
         ]);
 
-        // Find partner
+        // Bước 2: Tìm partner theo username
         $partner = Customer::where('username', $request->partner_username)->first();
         
         if (!$partner) {
             return back()->withErrors(['partner_username' => 'Không tìm thấy người dùng này']);
         }
 
+        // Bước 3: Kiểm tra không thể tạo giao dịch với chính mình
         if ($partner->id === $this->customer->id) {
             return back()->withErrors(['partner_username' => 'Không thể tạo giao dịch với chính mình']);
         }
 
-        // Calculate fee based on amount and duration
+        // Bước 4: Tính phí giao dịch dựa trên amount và thời hạn
         $fee = $this->calculateTransactionFee($request->amount, $request->duration_hours);
         
-        // Check balance if customer is buyer
+        // Bước 5: Kiểm tra số dư nếu customer là buyer
         if ($request->role === 'BUYER') {
             $totalRequired = $request->amount + $fee;
             if ($this->customer->balance->available_balance < $totalRequired) {
@@ -122,19 +133,21 @@ class TransactionController extends BaseCustomerController
             }
         }
 
+        // Bước 6: Tạo giao dịch trong database transaction
         DB::transaction(function () use ($request, $partner, $fee) {
-            $transaction = IntermediateTransaction::create([
+            
+            IntermediateTransaction::create([
                 'buyer_id' => $request->role === 'BUYER' ? $this->customer->id : $partner->id,
                 'seller_id' => $request->role === 'SELLER' ? $this->customer->id : $partner->id,
                 'amount' => $request->amount,
                 'fee' => $fee,
                 'description' => $request->description,
-                'status' => IntermediateTransactionStatus::PENDING,
+                'status' => \App\States\IntermediateTransaction\PendingState::class,
                 'duration_hours' => $request->duration_hours,
                 'expires_at' => now()->addHours($request->duration_hours),
             ]);
 
-            // Nếu khách hàng là người mua, khấu trừ tiền từ số dư
+            // Bước 7: Nếu customer là buyer, khóa tiền trong ví
             if ($request->role === 'BUYER') {
                 $this->customer->balance->decrement('balance', $request->amount + $fee);
                 $this->customer->balance->increment('locked_balance', $request->amount + $fee);
@@ -192,20 +205,23 @@ class TransactionController extends BaseCustomerController
 
     /**
      * Calculate transaction fee based on amount and duration
+     * 
+     * Tính toán phí giao dịch dựa trên số tiền và thời hạn
+     * Logic: Phí cơ bản theo bracket + phí 20% cho mỗi ngày nếu >= 24h
      */
     private function calculateTransactionFee(float $amount, int $durationHours): float
     {
-        // Base fee calculation
-        if ($amount < 100000) $baseFee = 4000;
-        elseif ($amount <= 200000) $baseFee = 6000;
-        elseif ($amount <= 1000000) $baseFee = 10000;
-        elseif ($amount <= 2000000) $baseFee = 16000;
-        elseif ($amount <= 5000000) $baseFee = 36000;
-        elseif ($amount <= 10000000) $baseFee = 66000;
-        elseif ($amount <= 30000000) $baseFee = 150000;
-        else $baseFee = 300000;
+        // Tính phí cơ bản theo bracket amount
+        if ($amount < 100000) $baseFee = 4000;           // < 100k: 4k
+        elseif ($amount <= 200000) $baseFee = 6000;      // 100k-200k: 6k
+        elseif ($amount <= 1000000) $baseFee = 10000;    // 200k-1M: 10k
+        elseif ($amount <= 2000000) $baseFee = 16000;    // 1M-2M: 16k
+        elseif ($amount <= 5000000) $baseFee = 36000;    // 2M-5M: 36k
+        elseif ($amount <= 10000000) $baseFee = 66000;   // 5M-10M: 66k
+        elseif ($amount <= 30000000) $baseFee = 150000;  // 10M-30M: 150k
+        else $baseFee = 300000;                          // > 30M: 300k
 
-        // Add 20% per day for transactions >= 24 hours
+        // Thêm phí 20% cho mỗi ngày nếu giao dịch >= 24 giờ
         if ($durationHours >= 24) {
             $days = ceil($durationHours / 24);
             $baseFee += $baseFee * 0.2 * $days;
@@ -214,64 +230,74 @@ class TransactionController extends BaseCustomerController
         return $baseFee;
     }
 
+    /**
+     * Xác nhận giao dịch trung gian
+     * Logic: Sử dụng state machine transition ConfirmTransaction
+     */
     private function confirmTransaction(IntermediateTransaction $transaction, Customer $customer): RedirectResponse
     {
-        if ($transaction->status !== IntermediateTransactionStatus::PENDING) {
-            return back()->withErrors(['status' => 'Giao dịch không thể xác nhận']);
+        try {
+            // Sử dụng helper method từ model để xác nhận giao dịch
+            $transaction->confirm();
+            
+            return back()->with('success', 'Đã xác nhận giao dịch');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Không thể xác nhận giao dịch: ' . $e->getMessage()]);
         }
-
-        $transaction->update([
-            'status' => IntermediateTransactionStatus::CONFIRMED,
-            'confirmed_at' => now(),
-        ]);
-        
-        return back()->with('success', 'Đã xác nhận giao dịch');
     }
 
+    /**
+     * Đánh dấu đã gửi hàng
+     * Logic: Chỉ seller mới có quyền → sử dụng state machine transition để chuyển trạng thái
+     */
     private function markAsShipped(IntermediateTransaction $transaction, Customer $customer): RedirectResponse
     {
         if ($transaction->seller_id !== $customer->id) {
             return back()->withErrors(['permission' => 'Chỉ người bán mới có thể đánh dấu đã gửi hàng']);
         }
+
+        try {
+            // Sử dụng state machine transition để đánh dấu đã gửi hàng
+            $transaction->markAsShipped();
             
-        $transaction->update(
-            [
-                'seller_sent_at' => now(),
-                'status' => IntermediateTransactionStatus::SELLER_SENT
-            ]
-        );
-        
-        
-        return back()->with('success', 'Đã đánh dấu đã gửi hàng');
+            return back()->with('success', 'Đã đánh dấu đã gửi hàng');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Không thể đánh dấu đã gửi hàng: ' . $e->getMessage()]);
+        }
     }
 
+    /**
+     * Đánh dấu đã nhận hàng và hoàn thành giao dịch
+     * Logic: Chỉ buyer mới có quyền → chuyển tiền cho seller + tặng điểm cho buyer
+     */
+    /**
+     * Đánh dấu đã nhận hàng (buyer xác nhận)
+     * Logic: Chỉ buyer mới có quyền → sử dụng state machine transition để hoàn thành giao dịch
+     */
     private function markAsReceived(IntermediateTransaction $transaction, Customer $customer): RedirectResponse
     {
         if ($transaction->buyer_id !== $customer->id) {
             return back()->withErrors(['permission' => 'Chỉ người mua mới có thể đánh dấu đã nhận hàng']);
         }
 
-        DB::transaction(function () use ($transaction) {
-            $transaction->update([
-                'buyer_received_at' => now(),
-                'status' => IntermediateTransactionStatus::COMPLETED,
-                'completed_at' => now(),
-            ]);
-
-            // Release money to seller
-            $seller = $transaction->seller;
-            $seller->balance->increment('balance', $transaction->amount);
+        try {
+            // Sử dụng state machine transition để hoàn thành giao dịch
+            $transaction->markAsReceived();
             
-            // Give points to buyer
-            $pointsReward = $this->calculatePointsReward($transaction->amount);
-            $buyer = $transaction->buyer;
-            $buyer->points->increment('points', $pointsReward);
-            $buyer->points->increment('total_earned', $pointsReward);
-        });
-        
-        return back()->with('success', 'Đã hoàn tất giao dịch');
+            return back()->with('success', 'Đã hoàn tất giao dịch');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Không thể hoàn thành giao dịch: ' . $e->getMessage()]);
+        }
     }
 
+    /**
+     * Tạo tranh chấp cho giao dịch
+     * Logic: Validate reason/description → Tạo Dispute → Cập nhật status thành DISPUTED
+     */
+    /**
+     * Tạo tranh chấp cho giao dịch
+     * Logic: Validate reason/description → Tạo Dispute → sử dụng state machine transition để chuyển sang trạng thái DISPUTED
+     */
     private function createDispute(IntermediateTransaction $transaction, Customer $customer, Request $request): RedirectResponse
     {
         $request->validate([
@@ -286,50 +312,107 @@ class TransactionController extends BaseCustomerController
             'description.max' => 'Mô tả chi tiết khiếu nại không được vượt quá 1000 ký tự.',
         ]);
 
-        $partner = $transaction->buyer_id === $customer->id ? $transaction->seller : $transaction->buyer;
+        try {
+            // Xác định đối tác trong giao dịch
+            $partner = $transaction->buyer_id === $customer->id ? $transaction->seller : $transaction->buyer;
 
-        \App\Models\Dispute::create([
-            'transaction_id' => $transaction->id,
-            'complainant_id' => $customer->id,
-            'respondent_id' => $partner->id,
-            'reason' => $request->reason,
-            'description' => $request->description,
-            'status' => DisputeStatus::PENDING,
-        ]);
+            // Tạo dispute record
+            \App\Models\Dispute::create([
+                'transaction_id' => $transaction->id,
+                'complainant_id' => $customer->id,     // Người khiếu nại
+                'respondent_id' => $partner->id,       // Người bị khiếu nại
+                'reason' => $request->reason,
+                'description' => $request->description,
+                'status' => DisputeStatus::PENDING,
+            ]);
 
-        $transaction->update(['status' => IntermediateTransactionStatus::DISPUTED]);
-        
-        return back()->with('success', 'Đã tạo tranh chấp. Quản trị viên sẽ xem xét trong thời gian sớm nhất.');
+            // Sử dụng state machine transition để chuyển sang trạng thái DISPUTED
+            $transaction->markAsDisputed();
+            
+            return back()->with('success', 'Đã tạo tranh chấp. Quản trị viên sẽ xem xét trong thời gian sớm nhất.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Không thể tạo tranh chấp: ' . $e->getMessage()]);
+        }
     }
 
+    /**
+     * Hủy giao dịch trung gian
+     * Logic: Chỉ có thể hủy khi PENDING → sử dụng state machine transition để hủy giao dịch
+     */
     private function cancelTransaction(IntermediateTransaction $transaction, Customer $customer): RedirectResponse
     {
-        if ($transaction->status !== IntermediateTransactionStatus::PENDING) {
-            return back()->withErrors(['status' => 'Giao dịch không thể hủy']);
+        try {
+            // Sử dụng state machine transition để hủy giao dịch
+            $transaction->cancel();
+            
+            return back()->with('success', 'Đã hủy giao dịch');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Không thể hủy giao dịch: ' . $e->getMessage()]);
         }
-
-        DB::transaction(function () use ($transaction) {
-            $transaction->update(['status' => IntermediateTransactionStatus::CANCELLED]);
-
-            // Refund money to buyer if money was held
-            if ($transaction->buyer->balance->locked_balance >= $transaction->amount + $transaction->fee) {
-                $transaction->buyer->balance->decrement('locked_balance', $transaction->amount + $transaction->fee);
-                $transaction->buyer->balance->increment('balance', $transaction->amount + $transaction->fee);
-            }
-        });
-        
-        return back()->with('success', 'Đã hủy giao dịch');
     }
 
+    /**
+     * Tính toán điểm thưởng dựa trên số tiền giao dịch
+     * Logic: Bracket system - amount càng cao, điểm thưởng càng nhiều
+     */
     private function calculatePointsReward(float $amount): int
     {
-        if ($amount < 100000) return 2;
-        elseif ($amount <= 200000) return 3;
-        elseif ($amount <= 1000000) return 5;
-        elseif ($amount <= 2000000) return 8;
-        elseif ($amount <= 5000000) return 16;
-        elseif ($amount <= 10000000) return 32;
-        elseif ($amount <= 30000000) return 75;
-        else return 150;
+        if ($amount < 100000) return 2;          // < 100k: 2 điểm
+        elseif ($amount <= 200000) return 3;     // 100k-200k: 3 điểm
+        elseif ($amount <= 1000000) return 5;    // 200k-1M: 5 điểm
+        elseif ($amount <= 2000000) return 8;    // 1M-2M: 8 điểm
+        elseif ($amount <= 5000000) return 16;   // 2M-5M: 16 điểm
+        elseif ($amount <= 10000000) return 32;  // 5M-10M: 32 điểm
+        elseif ($amount <= 30000000) return 75;  // 10M-30M: 75 điểm
+        else return 150;                         // > 30M: 150 điểm
+    }
+
+    /**
+     * Get transaction fee calculation for preview
+     */
+    public function calculateFee(Request $request)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1000',
+            'duration_hours' => 'required|integer|min:1|max:8760', // Max 1 năm
+        ]);
+
+        $amount = $validated['amount'];
+        $durationHours = $validated['duration_hours'];
+
+        $transactionFee = \App\Models\TransactionFee::getApplicableFee($amount);
+        
+        if (!$transactionFee) {
+            return response()->json([
+                'error' => 'Không thể tính phí cho số tiền này'
+            ], 400);
+        }
+
+        // Tính phí cơ bản
+        $baseFee = $transactionFee->fee_amount + ($amount * $transactionFee->fee_percentage / 100);
+        
+        // Thêm phí daily nếu >= 24h
+        $finalFee = $baseFee;
+        $hasDailyFee = $durationHours >= 24;
+        if ($hasDailyFee) {
+            $dailyFeePercentage = $transactionFee->daily_fee_percentage / 100;
+            $finalFee += $baseFee * $dailyFeePercentage;
+        }
+
+        $finalFee = round($finalFee, 2);
+
+        return response()->json([
+            'amount' => $amount,
+            'duration_hours' => $durationHours,
+            'fee_breakdown' => [
+                'base_fee' => $baseFee,
+                'daily_fee_percentage' => $transactionFee->daily_fee_percentage,
+                'has_daily_fee' => $hasDailyFee,
+                'daily_fee_amount' => $hasDailyFee ? round($baseFee * $transactionFee->daily_fee_percentage / 100, 2) : 0,
+                'total_fee' => $finalFee,
+            ],
+            'points_reward' => $transactionFee->points_reward,
+            'total_amount' => $amount + $finalFee,
+        ]);
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Flag, Download, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, Clock, MessageSquare, Flag, Download, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,61 +14,13 @@ import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { formatVND } from '@/lib/currency';
 import { formatDate } from '@/lib/date';
 import { IntermediateTransaction } from '@/types';
+import { statusConfigTransaction } from '@/lib/config';
 
 interface TransactionShowPageProps {
     transaction: IntermediateTransaction;
 }
 
-const statusConfig = {
-    pending: { 
-        label: 'Chờ xác nhận', 
-        color: 'orange', 
-        icon: Clock,
-        description: 'Giao dịch đang chờ đối tác xác nhận'
-    },
-    confirmed: { 
-        label: 'Đã xác nhận', 
-        color: 'blue', 
-        icon: CheckCircle,
-        description: 'Giao dịch đã được xác nhận, đang chờ thực hiện'
-    },
-    seller_sent: { 
-        label: 'Người bán đã gửi', 
-        color: 'blue', 
-        icon: ArrowRightLeft,
-        description: 'Người bán đã gửi hàng, chờ người mua xác nhận'
-    },
-    buyer_received: { 
-        label: 'Người mua đã nhận', 
-        color: 'green', 
-        icon: CheckCircle,
-        description: 'Người mua đã xác nhận nhận hàng'
-    },
-    completed: { 
-        label: 'Hoàn thành', 
-        color: 'green', 
-        icon: CheckCircle,
-        description: 'Giao dịch đã hoàn thành thành công'
-    },
-    cancelled: { 
-        label: 'Đã hủy', 
-        color: 'red', 
-        icon: XCircle,
-        description: 'Giao dịch đã bị hủy'
-    },
-    disputed: { 
-        label: 'Tranh chấp', 
-        color: 'yellow', 
-        icon: AlertTriangle,
-        description: 'Giao dịch đang trong quá trình giải quyết tranh chấp'
-    },
-    expired: { 
-        label: 'Đã hết hạn', 
-        color: 'gray', 
-        icon: XCircle,
-        description: 'Giao dịch đã hết hạn'
-    },
-};
+
 
 export default function TransactionShow({ transaction }: TransactionShowPageProps) {
     const { customer } = useCustomerAuth();
@@ -79,7 +31,20 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
     
     const isBuyer = transaction.buyer_id === customer?.id;
     const partner = isBuyer ? transaction.seller : transaction.buyer;
-    const statusInfo = statusConfig[transaction.status];
+    
+    // Get status info with fallback
+    const statusInfo = statusConfigTransaction[transaction.status as keyof typeof statusConfigTransaction] || {
+        label: 'Không xác định',
+        color: 'gray',
+        icon: Clock,
+        description: 'Trạng thái giao dịch không xác định'
+    };
+    
+    // Helper to check status (support both enum strings and state machine classes)
+    const isStatus = (statusName: string) => {
+        return transaction.status === statusName || 
+               transaction.status === `App\\States\\IntermediateTransaction\\${statusName.charAt(0).toUpperCase() + statusName.slice(1)}State`;
+    };
     
     const handleAction = async (action: string, data?: Record<string, string>) => {
         setLoading(true);
@@ -110,10 +75,8 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
             reason: disputeReason,
             description: disputeDescription
         });
-    };
-
-    const getActionButtons = () => {
-        if (transaction.status === 'pending') {
+    };    const getActionButtons = () => {
+        if (isStatus('pending')) {
             if (isBuyer) {
                 return (
                     <Button 
@@ -145,9 +108,9 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
             }
         }
         
-        if (transaction.status === 'confirmed') {
+        if (isStatus('confirmed')) {
             if (!isBuyer) {
-                // Seller can mark as shipped
+                // Người bán có thể đánh dấu là đã vận chuyển
                 return (
                     <div className="flex space-x-2">
                         <Button 
@@ -208,7 +171,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                     </div>
                 );
             } else {
-                // Buyer can create dispute
+                // Người mua có thể tạo tranh chấp
                 return (
                     <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
                         <DialogTrigger asChild>
@@ -263,9 +226,9 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
             }
         }
         
-        if (transaction.status === 'seller_sent') {
+        if (isStatus('seller_sent') || isStatus('sellersent')) {
             if (isBuyer) {
-                // Buyer can mark as received
+                // Người mua có thể đánh dấu là đã nhận
                 return (
                     <div className="flex space-x-2">
                         <Button 
@@ -285,7 +248,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                     </div>
                 );
             } else {
-                // Seller can create dispute
+                // Người bán có thể tạo tranh chấp
                 return (
                     <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
                         <DialogTrigger asChild>
@@ -345,7 +308,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
 
     return (
         <CustomerLayout>
-            <div className="space-y-6">
+            <div className="mx-auto max-w-6xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col items-start space-y-4">
@@ -450,15 +413,15 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {
-                                    transaction.status === 'pending' && (
+                                    (isStatus('pending')) && (
                                         <p className='text-sm text-white font-bold bg-green-500 px-4 py-2 rounded-md flex items-center'>
                                             <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
                                             Đang chờ xác nhận từ đối tác ...
                                         </p>
                                     )
                                 }
-                                {transaction.status !== 'pending' && (
-                                    <Link href={`/customer/chat/transaction/${transaction.id}`}>
+                                {!isStatus('pending') && (
+                                    <Link href={`/customer/chat/transaction/intermediate/${transaction.id}`}>
                                         <Button variant="outline" className="w-full justify-start">
                                             <MessageSquare className="w-4 h-4 mr-2" />
                                             Chat giao dịch
@@ -466,14 +429,14 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                     </Link>
                                 )}
 
-                                {transaction.status === 'completed' && (
+                                {isStatus('completed') && (
                                     <Button variant="outline" className="w-full justify-start">
                                         <Download className="w-4 h-4 mr-2" />
                                         Tải hóa đơn
                                     </Button>
                                 )}
 
-                                {transaction.status === 'disputed' && transaction.dispute && (
+                                {isStatus('disputed') && transaction.dispute && (
                                     <Link href={`/customer/disputes/${transaction.dispute.id}`}>
                                         <Button variant="outline" className="w-full justify-start">
                                             <Flag className="w-4 h-4 mr-2" />
@@ -524,7 +487,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                         </div>
                                     </div>
 
-                                    {transaction.status !== 'pending' && (
+                                    {!isStatus('pending') && (
                                         <div className="flex items-center space-x-3">
                                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                             <div>
@@ -534,7 +497,7 @@ export default function TransactionShow({ transaction }: TransactionShowPageProp
                                         </div>
                                     )}
 
-                                    {transaction.status === 'completed' && (
+                                    {isStatus('completed') && (
                                         <div className="flex items-center space-x-3">
                                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                             <div>

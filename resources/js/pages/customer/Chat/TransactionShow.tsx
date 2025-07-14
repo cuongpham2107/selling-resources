@@ -21,12 +21,13 @@ import {
     X,
     Paperclip,
     PhoneCall,
-    Mail
+    Mail,
+    Clock
 } from 'lucide-react';
 import { formatVND } from '@/lib/currency';
-import { getStatusIcon } from '@/components/status-icon';
 import { formatDateTime } from '@/lib/date';
-import { formatFileSize, getStatusLabel } from '@/lib/utils';
+import { formatFileSize } from '@/lib/utils';
+import { statusConfigTransaction } from '@/lib/config';
 
 interface TransactionShowProps {
     transaction: IntermediateTransaction;
@@ -46,7 +47,35 @@ export default function TransactionShow({
     const imageInputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState<string | null>(null);
-
+    
+    // Get status info with fallback (same as Show.tsx)
+    const statusInfo = statusConfigTransaction[transaction.status as keyof typeof statusConfigTransaction] || {
+        label: 'Không xác định',
+        color: 'gray',
+        icon: Clock,
+        description: 'Trạng thái giao dịch không xác định'
+    };
+    // Helper function to check if transaction is completed
+    const isCompleted = (status: string) => {
+        return status === 'completed' || 
+               status === 'App\\States\\IntermediateTransaction\\CompletedState' ||
+               status.includes('CompletedState');
+    };
+    
+    // Helper function to check if transaction is cancelled
+    const isCancelled = (status: string) => {
+        return status === 'cancelled' || 
+               status === 'App\\States\\IntermediateTransaction\\CancelledState' ||
+               status.includes('CancelledState');
+    };
+    
+    // Helper function to check if transaction is disputed
+    const isDisputed = (status: string) => {
+        return status === 'disputed' || 
+               status === 'App\\States\\IntermediateTransaction\\DisputedState' ||
+               status.includes('DisputedState');
+    };
+    
     const { data, setData, processing, reset } = useForm({
         message: '',
         images: [] as File[],
@@ -146,11 +175,28 @@ export default function TransactionShow({
                             </p>
                         </div>
                     </div>
-                    <Badge variant="outline" className="flex items-center space-x-1">
-                        {getStatusIcon(transaction.status)}
-                        <span>{getStatusLabel(transaction.status)}</span>
+                    <Badge 
+                        variant="outline" 
+                        className={`flex items-center space-x-1 border-${statusInfo.color}-200 text-${statusInfo.color}-700 bg-${statusInfo.color}-50`}
+                        title={statusInfo.description}
+                    >
+                        {React.createElement(statusInfo.icon, { className: 'w-4 h-4' })}
+                        <span>{statusInfo.label}</span>
                     </Badge>
                 </div>
+
+                {/* Status Alert */}
+                <Alert>
+                    <statusInfo.icon className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                        <div>
+                            <strong>{statusInfo.label}:</strong> {statusInfo.description}
+                        </div>
+                        <Badge variant="outline" className={`border-${statusInfo.color}-200 text-${statusInfo.color}-700 bg-${statusInfo.color}-50`}>
+                            {statusInfo.label}
+                        </Badge>
+                    </AlertDescription>
+                </Alert>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Chat Messages */}
@@ -260,7 +306,7 @@ export default function TransactionShow({
                                 </div>
 
                                 {/* Message Input */}
-                                {transaction.status !== 'completed' && transaction.status !== 'cancelled' && (
+                                {!isCompleted(transaction.status) && !isCancelled(transaction.status) && (
                                     <div className="space-y-3">
                                         {/* Selected Images Preview */}
                                         {selectedImages.length > 0 && (
@@ -387,11 +433,11 @@ export default function TransactionShow({
                                     <p className="text-red-500 text-sm mt-1">{error}</p>
                                 )}
 
-                                {(transaction.status === 'completed' || transaction.status === 'cancelled') && (
+                                {(isCompleted(transaction.status) || isCancelled(transaction.status)) && (
                                     <Alert>
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertDescription>
-                                            Giao dịch đã {transaction.status === 'completed' ? 'hoàn thành' : 'bị hủy'}. 
+                                            Giao dịch đã {isCompleted(transaction.status) ? 'hoàn thành' : 'bị hủy'}. 
                                             Không thể gửi tin nhắn mới.
                                         </AlertDescription>
                                     </Alert>
@@ -429,10 +475,19 @@ export default function TransactionShow({
 
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Trạng thái</p>
-                                    <Badge variant="outline" className="flex items-center space-x-1 w-fit">
-                                        {getStatusIcon(transaction.status)}
-                                        <span>{getStatusLabel(transaction.status)}</span>
-                                    </Badge>
+                                    <div className="space-y-2">
+                                        <Badge 
+                                            variant="outline" 
+                                            className={`flex items-center space-x-1 w-fit border-${statusInfo.color}-200 text-${statusInfo.color}-700 bg-${statusInfo.color}-50`}
+                                            title={statusInfo.description}
+                                        >
+                                            {React.createElement(statusInfo.icon, { className: 'w-4 h-4' })}
+                                            <span>{statusInfo.label}</span>
+                                        </Badge>
+                                        <p className="text-xs text-gray-500">
+                                            {statusInfo.description}
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <Separator />
@@ -503,7 +558,7 @@ export default function TransactionShow({
                                     </Button>
                                 </Link>
 
-                                {transaction.status === 'disputed' && transaction.dispute && (
+                                {isDisputed(transaction.status) && transaction.dispute && (
                                     <Link href={`/customer/disputes/${transaction.dispute.id}`}>
                                         <Button variant="outline" className="w-full justify-start">
                                             <AlertCircle className="w-4 h-4 mr-2" />

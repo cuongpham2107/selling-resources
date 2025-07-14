@@ -42,7 +42,7 @@ class TransactionFeesTable
                     
                 TextColumn::make('points_reward')
                     ->label('Thưởng C')
-                    ->formatStateUsing(fn ($state) => number_format($state) . ' C')
+                    ->formatStateUsing(fn ($state) => number_format($state) . ' điểm')
                     ->sortable(),
                     
                 IconColumn::make('is_active')

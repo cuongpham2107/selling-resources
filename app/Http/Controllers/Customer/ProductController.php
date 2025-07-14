@@ -186,6 +186,7 @@ class ProductController extends BaseCustomerController
             'remove_images' => ['nullable', 'array'],
             'content' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'is_sold' => ['boolean'],
         ], [
             'name.required' => 'Tên sản phẩm là bắt buộc.',
             'name.string' => 'Tên sản phẩm phải là chuỗi ký tự.',
@@ -231,6 +232,7 @@ class ProductController extends BaseCustomerController
             'images' => array_values($currentImages),
             'content' => $validated['content'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
+            'is_sold' => $validated['is_sold'] ?? false,
         ]);
 
         return redirect()->route('customer.products.show', $product)

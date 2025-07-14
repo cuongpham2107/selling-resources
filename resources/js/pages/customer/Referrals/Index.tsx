@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Copy, Share2, Gift, TrendingUp, Calendar, DollarSign, CheckCircle } from 'lucide-react';
+import { Users, Copy, Share2, Gift, TrendingUp, Calendar, DollarSign, CheckCircle, Dot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,23 @@ interface ReferralsIndexPageProps {
         pending_earnings: number;
     };
     referred_customers: {
-        data: Customer[];
+        data: Array<{
+            id: number;
+            referrer_id: number;
+            referred_id: number;
+            total_points_earned: number;
+            successful_transactions: number;
+            first_transaction_at: string | null;
+            created_at: string;
+            updated_at: string;
+            status: string;
+            referred: {
+                id: number;
+                username: string;
+                email?: string;
+                created_at: string;
+            };
+        }>;
         current_page: number;
         last_page: number;
         per_page: number;
@@ -30,11 +46,18 @@ interface ReferralsIndexPageProps {
     };
     referral_earnings: Array<{
         id: number;
-        referred_customer_id: number;
+        customer_id: number;
+        type: string;
         amount: number;
-        status: string;
+        balance_after: number;
+        related_transaction_type: string | null;
+        related_transaction_id: number | null;
+        related_customer_id: number | null;
+        description: string | null;
         created_at: string;
-        referred_customer?: Customer;
+        updated_at: string;
+        relatedCustomer?: Customer;
+        related_customer?: Customer;
     }>;
 }
 
@@ -47,7 +70,7 @@ export default function ReferralsIndex({
 }: ReferralsIndexPageProps) {
     const [copying, setCopying] = useState(false);
     const [copied, setCopied] = useState(false);
-
+    console.log(referred_customers)
     const handleCopyCode = async () => {
         setCopying(true);
         try {
@@ -131,11 +154,11 @@ export default function ReferralsIndex({
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center space-x-2">
-                                <DollarSign className="w-8 h-8 text-purple-500" />
+                                <Dot className="w-8 h-8 text-purple-500" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Tổng thu nhập</p>
                                     <p className="text-2xl font-bold text-green-600">
-                                        {formatVND(referral_stats.total_earnings)}
+                                        {referral_stats.total_earnings} điểm
                                     </p>
                                 </div>
                             </div>
@@ -252,12 +275,23 @@ export default function ReferralsIndex({
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                                             Chưa có người được giới thiệu
                                         </h3>
-                                        <p className="text-gray-600">
+                                        <p className="text-gray-600 mb-4">
                                             Bắt đầu chia sẻ mã giới thiệu để nhận phần thưởng
                                         </p>
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                                            <p className="text-sm text-blue-800">
+                                                💡 <strong>Mẹo:</strong> Chia sẻ mã giới thiệu trên mạng xã hội hoặc gửi cho bạn bè để tăng cơ hội nhận thưởng!
+                                            </p>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
+                                    <>
+                                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-sm text-yellow-800">
+                                                📱 <strong>Lưu ý:</strong> Bảng có thể cuộn ngang trên thiết bị di động để xem đầy đủ thông tin.
+                                            </p>
+                                        </div>
+                                        <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -265,41 +299,64 @@ export default function ReferralsIndex({
                                                     <TableHead>Email</TableHead>
                                                     <TableHead>Trạng thái</TableHead>
                                                     <TableHead>Ngày tham gia</TableHead>
+                                                    <TableHead>Giao dịch thành công</TableHead>
+                                                    <TableHead>Giao dịch đầu tiên</TableHead>
                                                     <TableHead>Thu nhập từ người này</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {referred_customers.data.map((referredCustomer) => {
-                                                    const earnings = referral_earnings
-                                                        .filter(e => e.referred_customer_id === referredCustomer.id)
-                                                        .reduce((sum, e) => sum + e.amount, 0);
-                                                    
+                                                {referred_customers.data.map((referral) => {
                                                     return (
-                                                        <TableRow key={referredCustomer.id}>
+                                                        <TableRow key={referral.id}>
                                                             <TableCell className="font-medium">
-                                                                {referredCustomer.username}
+                                                                {referral.referred.username}
                                                             </TableCell>
-                                                            <TableCell>{referredCustomer.email}</TableCell>
                                                             <TableCell>
-                                                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                                                    Hoạt động
+                                                                {referral.referred.email || 'N/A'}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge 
+                                                                    variant="outline" 
+                                                                    className={
+                                                                        referral.status === 'active' 
+                                                                            ? 'bg-green-50 text-green-700 border-green-200'
+                                                                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                                                                    }
+                                                                >
+                                                                    {referral.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                                                                 </Badge>
                                                             </TableCell>
                                                             <TableCell>
                                                                 <div className="flex items-center">
                                                                     <Calendar className="w-3 h-3 mr-1 text-gray-400" />
-                                                                    {formatDate(referredCustomer.created_at)}
+                                                                    {formatDate(referral.referred.created_at)}
                                                                 </div>
                                                             </TableCell>
+                                                            <TableCell className="text-center">
+                                                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                                                    {referral.successful_transactions}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {referral.first_transaction_at ? (
+                                                                    <div className="flex items-center">
+                                                                        <Calendar className="w-3 h-3 mr-1 text-gray-400" />
+                                                                        {formatDate(referral.first_transaction_at)}
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-gray-500 text-sm">Chưa có</span>
+                                                                )}
+                                                            </TableCell>
                                                             <TableCell className="font-semibold text-green-600">
-                                                                {formatVND(earnings)}
+                                                                {formatVND(referral.total_points_earned)}
                                                             </TableCell>
                                                         </TableRow>
                                                     );
                                                 })}
                                             </TableBody>
                                         </Table>
-                                    </div>
+                                        </div>
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
@@ -318,42 +375,49 @@ export default function ReferralsIndex({
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                                             Chưa có thu nhập nào
                                         </h3>
-                                        <p className="text-gray-600">
-                                            Thu nhập từ giới thiệu sẽ hiển thị ở đây
+                                        <p className="text-gray-600 mb-4">
+                                            Thu nhập từ thưởng giới thiệu sẽ hiển thị ở đây
                                         </p>
+                                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+                                            <p className="text-sm text-green-800">
+                                                💰 <strong>Lưu ý:</strong> Bạn sẽ nhận thưởng điểm khi người được giới thiệu thực hiện giao dịch thành công!
+                                            </p>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
+                                    <>
+                                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            <p className="text-sm text-green-800">
+                                                🎉 <strong>Tuyệt vời!</strong> Bạn đã nhận được {referral_earnings.length} thưởng giới thiệu. Tiếp tục chia sẻ để nhận thêm thưởng!
+                                            </p>
+                                        </div>
+                                        <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Người được giới thiệu</TableHead>
-                                                    <TableHead>Số tiền</TableHead>
-                                                    <TableHead>Trạng thái</TableHead>
-                                                    <TableHead>Ngày nhận</TableHead>
+                                                    <TableHead>Thưởng nhận được</TableHead>
+                                                    {/* <TableHead>Trạng thái</TableHead> */}
+                                                    <TableHead>Ngày nhận thưởng</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {referral_earnings.map((earning) => (
                                                     <TableRow key={earning.id}>
                                                         <TableCell className="font-medium">
-                                                            {earning.referred_customer?.username || 'N/A'}
+                                                            {earning.related_customer?.username || earning.relatedCustomer?.username || `ID: ${earning.related_customer_id || 'N/A'}`}
                                                         </TableCell>
                                                         <TableCell className="font-semibold text-green-600">
-                                                            {formatVND(earning.amount)}
+                                                            +{earning.amount.toLocaleString()} điểm
                                                         </TableCell>
-                                                        <TableCell>
+                                                        {/* <TableCell>
                                                             <Badge 
                                                                 variant="outline" 
-                                                                className={
-                                                                    earning.status === 'confirmed' 
-                                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                                        : 'bg-orange-50 text-orange-700 border-orange-200'
-                                                                }
+                                                                className="bg-green-50 text-green-700 border-green-200"
                                                             >
-                                                                {earning.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
+                                                                Đã xác nhận
                                                             </Badge>
-                                                        </TableCell>
+                                                        </TableCell> */}
                                                         <TableCell>
                                                             <div className="flex items-center">
                                                                 <Calendar className="w-3 h-3 mr-1 text-gray-400" />
@@ -364,7 +428,8 @@ export default function ReferralsIndex({
                                                 ))}
                                             </TableBody>
                                         </Table>
-                                    </div>
+                                        </div>
+                                    </>
                                 )}
                             </CardContent>
                         </Card>

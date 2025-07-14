@@ -18,7 +18,6 @@ export default function CustomerLayout({
     showSidebar = true
 }: CustomerLayoutProps) {
     const { customer } = useCustomerAuth();
-    console.log('CustomerLayout', { customer });
     
     return (
         <SidebarProvider>

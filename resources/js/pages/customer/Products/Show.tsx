@@ -42,7 +42,7 @@ export default function Show({ product, analytics }: Props) {
         <CustomerLayout>
             <Head title={`Sản phẩm: ${product.name}`} />
 
-            <div className="container mx-auto py-6">
+            <div className="container mx-auto max-w-5xl py-6">
                 <div className="mb-6">
                     <Link
                         href={route('customer.products.index')}

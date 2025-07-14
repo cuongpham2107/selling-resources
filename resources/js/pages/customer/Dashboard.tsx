@@ -17,10 +17,10 @@ import CustomerLayout from '@/layouts/CustomerLayout';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { formatVND, formatPoints } from '@/lib/currency';
 import { formatDateTime, getRelativeTime } from '@/lib/date';
-import { getStatusLabel, getTransactionStatusColor } from '@/lib/utils';
 import { CustomerStats, IntermediateTransaction, StoreTransaction, Notification } from '@/types';
 import { ResponsiveGrid } from '@/components/ui/responsive-container';
 import { StatsCard } from '@/components/ui/responsive-card';
+import { getStatusBadge } from '@/lib/config';
 
 interface DashboardPageProps {
     stats: CustomerStats;
@@ -212,7 +212,7 @@ export default function CustomerDashboard({
                             <CardTitle className="flex items-center justify-between">
                                 Giao dịch trung gian gần đây
                                 <Link href="/customer/transactions">
-                                    <Button variant="ghost" size="sm">
+                                    <Button variant="outline" size="sm">
                                         <Eye className="h-4 w-4 mr-1" />
                                         Xem tất cả
                                     </Button>
@@ -232,9 +232,9 @@ export default function CustomerDashboard({
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end ml-4">
-                                            <Badge className={getTransactionStatusColor(transaction.status)}>
-                                                {getStatusLabel(transaction.status)}
-                                            </Badge>
+                                          
+                                            {getStatusBadge(transaction.status)}
+                                          
                                             <p className="text-sm font-medium mt-1">
                                                 {formatVND(transaction.amount)}
                                             </p>
@@ -255,7 +255,7 @@ export default function CustomerDashboard({
                             <CardTitle className="flex items-center justify-between">
                                 Giao dịch cửa hàng gần đây
                                 <Link href="/customer/store/transactions">
-                                    <Button variant="ghost" size="sm">
+                                    <Button variant="outline" size="sm">
                                         <Eye className="h-4 w-4 mr-1" />
                                         Xem tất cả
                                     </Button>
@@ -276,9 +276,9 @@ export default function CustomerDashboard({
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end ml-4">
-                                            <Badge className={getTransactionStatusColor(transaction.status)}>
-                                                {getStatusLabel(transaction.status)}
-                                            </Badge>
+                                           
+                                            {getStatusBadge(transaction.status)}
+                                           
                                             <p className="text-sm font-medium mt-1">
                                                 {formatVND(transaction.amount)}
                                             </p>

@@ -18,12 +18,37 @@ import type { Customer } from '@/types';
 interface StoreTransactionItem {
     id: number;
     transaction_code: string;
-    buyer_id: number;
-    seller_id: number;
     amount: number;
     fee: number;
-    status: string;
+    total_amount: number;
+    seller_receive_amount: number;
+    description: string;
     created_at: string;
+    updated_at: string;
+    completed_at?: string;
+    confirmed_at?: string;
+    cancelled_at?: string;
+    auto_complete_at?: string;
+    
+    // Status information
+    status: string;           // Class name
+    status_label: string;     // "Chờ xác nhận", "Đang giao dịch", etc.
+    status_color: string;     // "warning", "primary", "success", etc.
+    
+    // User roles
+    is_buyer: boolean;
+    is_seller: boolean;
+    
+    // Permissions based on current state
+    permissions: {
+        can_confirm: boolean;   // Chỉ seller && PENDING
+        can_cancel: boolean;    // PENDING || PROCESSING
+        can_complete: boolean;  // Chỉ buyer && PROCESSING
+        can_dispute: boolean;   // PROCESSING
+        can_chat: boolean;      // PROCESSING
+    };
+    
+    // Related data
     buyer: {
         id: number;
         username: string;
@@ -54,26 +79,43 @@ interface Props {
         }>;
     };
     currentUser: Customer;
+    pageTitle?: string;
+    pageDescription?: string;
+    showOnlyPurchases?: boolean;
 }
 
-export default function StoreTransactions({ transactions, currentUser }: Props) {
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'processing':
-                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Đang xử lý</Badge>;
-            case 'completed':
-                return <Badge variant="default" className="bg-green-100 text-green-800">Hoàn thành</Badge>;
-            case 'disputed':
-                return <Badge variant="destructive">Đang khiếu nại</Badge>;
-            case 'cancelled':
-                return <Badge variant="destructive" className="bg-gray-100 text-gray-800">Đã hủy</Badge>;
+export default function StoreTransactions({ 
+    transactions, 
+    currentUser, 
+    pageTitle = "Giao dịch cửa hàng",
+    pageDescription = "Quản lý các giao dịch mua bán sản phẩm",
+    showOnlyPurchases = false
+}: Props) {
+    const getStatusBadge = (statusLabel: string, statusColor: string) => {
+        const colorClass = getStatusColorClass(statusColor);
+        return <Badge variant="outline" className={colorClass}>{statusLabel}</Badge>;
+    };
+    console.log(currentUser);
+
+    const getStatusColorClass = (color: string) => {
+        switch (color) {
+            case 'warning':
+                return 'bg-orange-100 text-orange-800 border-orange-300';
+            case 'primary':
+                return 'bg-blue-100 text-blue-800 border-blue-300';
+            case 'success':
+                return 'bg-green-100 text-green-800 border-green-300';
+            case 'danger':
+                return 'bg-red-100 text-red-800 border-red-300';
+            case 'secondary':
+                return 'bg-gray-100 text-gray-800 border-gray-300';
             default:
-                return <Badge variant="outline">{status}</Badge>;
+                return 'bg-gray-100 text-gray-800 border-gray-300';
         }
     };
 
     const getRoleInTransaction = (transaction: StoreTransactionItem) => {
-        if (transaction.buyer_id === currentUser.id) {
+        if (transaction.is_buyer) {
             return { role: 'buyer', partner: transaction.seller.username, icon: ShoppingCart };
         } else {
             return { role: 'seller', partner: transaction.buyer.username, icon: DollarSign };
@@ -86,12 +128,12 @@ export default function StoreTransactions({ transactions, currentUser }: Props) 
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Giao dịch cửa hàng</h1>
-                        <p className="text-gray-600">Quản lý các giao dịch mua bán sản phẩm</p>
+                        <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
+                        <p className="text-gray-600">{pageDescription}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-sm">
-                            {transactions.total} giao dịch
+                            {transactions.total} {showOnlyPurchases ? 'giao dịch mua hàng' : 'giao dịch'}
                         </Badge>
                     </div>
                 </div>
@@ -118,7 +160,7 @@ export default function StoreTransactions({ transactions, currentUser }: Props) 
                             
                             return (
                                 <Card key={transaction.id} className="hover:shadow-md transition-shadow">
-                                    <CardContent className="p-6">
+                                    <CardContent className="px-6">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
                                                 {/* Product Image */}
@@ -159,7 +201,7 @@ export default function StoreTransactions({ transactions, currentUser }: Props) 
                                                 <div className="text-xl font-bold text-green-600 mb-2">
                                                     {formatVND(transaction.amount)}
                                                 </div>
-                                                {getStatusBadge(transaction.status)}
+                                                {getStatusBadge(transaction.status_label, transaction.status_color)}
                                                 <div className="mt-3">
                                                     <Button 
                                                         size="sm" 
@@ -182,7 +224,7 @@ export default function StoreTransactions({ transactions, currentUser }: Props) 
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm font-medium">
                                                     <span className="text-gray-900">Bạn nhận được:</span>
-                                                    <span className="text-green-600">{formatVND(transaction.amount - transaction.fee)}</span>
+                                                    <span className="text-green-600">{formatVND(transaction.seller_receive_amount)}</span>
                                                 </div>
                                             </div>
                                         )}

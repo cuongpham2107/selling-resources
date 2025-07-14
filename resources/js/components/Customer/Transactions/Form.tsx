@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from "sonner"
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,10 +77,15 @@ export default function TransactionForm({ errors = {}, message, initialPartnerUs
         try {
             router.post('/customer/transactions', formData as unknown as Record<string, string | number>, {
                 onSuccess: () => {
+                    toast("Tạo giao dịch thành công!",{
+                        description: 'Giao dịch trung gian đã được tạo. Đang chờ đối tác xác nhận.',
+                    });
                     if (onSuccess) {
                         onSuccess();
                     } else {
-                        router.visit('/customer/transactions');
+                        setTimeout(() => {
+                            router.visit('/customer/transactions');
+                        }, 1200);
                     }
                 },
                 onError: () => {

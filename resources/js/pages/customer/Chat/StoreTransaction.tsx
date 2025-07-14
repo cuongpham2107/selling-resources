@@ -35,6 +35,7 @@ export default function StoreTransactionPage({ transactions }: StoreTransactionP
             minute: '2-digit',
         });
     };
+   
 
     const formatVND = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -45,20 +46,27 @@ export default function StoreTransactionPage({ transactions }: StoreTransactionP
 
     const getStatusIcon = (status: string) => {
         switch (status) {
+            case 'pending':
+                return <Clock className="w-4 h-4 text-orange-500" />;
             case 'processing':
                 return <Clock className="w-4 h-4 text-blue-500" />;
             case 'completed':
                 return <CheckCircle className="w-4 h-4 text-green-500" />;
             case 'disputed':
                 return <AlertCircle className="w-4 h-4 text-red-500" />;
+            case 'cancelled':
+                return <AlertCircle className="w-4 h-4 text-gray-500" />;
             default:
                 return <Clock className="w-4 h-4 text-gray-500" />;
         }
     };
 
-    const getStatusLabel = (status: string) => {
+    const getStatusLabel = (statusLabel?: string, status?: string) => {
+        if (statusLabel) return statusLabel;
+        
         const statusLabels = {
-            processing: 'Đang xử lý',
+            pending: 'Chờ xác nhận',
+            processing: 'Đang giao dịch',
             completed: 'Hoàn thành',
             disputed: 'Tranh chấp',
             cancelled: 'Đã hủy',
@@ -121,7 +129,7 @@ export default function StoreTransactionPage({ transactions }: StoreTransactionP
                                                 </h3>
                                                 <Badge variant="outline" className="flex items-center space-x-1">
                                                     {getStatusIcon(transaction.status)}
-                                                    <span>{getStatusLabel(transaction.status)}</span>
+                                                    <span>{getStatusLabel(transaction.status_label, transaction.status)}</span>
                                                 </Badge>
                                             </div>
 

@@ -5,6 +5,8 @@ namespace App\Filament\Resources\StoreTransactions;
 use App\Filament\Resources\StoreTransactions\Pages\CreateStoreTransaction;
 use App\Filament\Resources\StoreTransactions\Pages\EditStoreTransaction;
 use App\Filament\Resources\StoreTransactions\Pages\ListStoreTransactions;
+use App\Filament\Resources\StoreTransactions\Pages\ViewStoreTransaction;
+use App\Filament\Resources\StoreTransactions\RelationManagers;
 use App\Filament\Resources\StoreTransactions\Schemas\StoreTransactionForm;
 use App\Filament\Resources\StoreTransactions\Tables\StoreTransactionsTable;
 use App\Models\StoreTransaction;
@@ -44,7 +46,7 @@ class StoreTransactionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ChatsRelationManager::class,
         ];
     }
 
@@ -53,6 +55,7 @@ class StoreTransactionResource extends Resource
         return [
             'index' => ListStoreTransactions::route('/'),
             'create' => CreateStoreTransaction::route('/create'),
+            'view' => ViewStoreTransaction::route('/{record}'),
             'edit' => EditStoreTransaction::route('/{record}/edit'),
         ];
     }

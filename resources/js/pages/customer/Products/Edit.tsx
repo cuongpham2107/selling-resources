@@ -20,6 +20,7 @@ export default function Edit({ product }: Props) {
         price: product.price.toString(),
         content: product.content || '',
         is_active: product.is_active,
+        is_sold: product.is_sold || false,
     });
     
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -66,20 +67,21 @@ export default function Edit({ product }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setProcessing(true);
-        
+
         const form = new FormData();
         form.append('name', formData.name);
         form.append('description', formData.description);
         form.append('price', formData.price);
         form.append('content', formData.content);
         form.append('is_active', formData.is_active ? '1' : '0');
+        form.append('is_sold', formData.is_sold ? '1' : '0');
         form.append('_method', 'PATCH');
-        
+
         // Add new images
         selectedImages.forEach((file, index) => {
             form.append(`new_images[${index}]`, file);
         });
-        
+
         // Add images to remove
         imagesToRemove.forEach((imagePath, index) => {
             form.append(`remove_images[${index}]`, imagePath);
@@ -104,7 +106,7 @@ export default function Edit({ product }: Props) {
         <CustomerLayout>
             <Head title={`Chỉnh sửa: ${product.name}`} />
 
-            <div className="container mx-auto py-6">
+            <div className="container mx-auto max-w-4xl py-6">
                 <div className="mb-6">
                     <Link
                         href={route('customer.products.show', product.id)}
@@ -289,15 +291,27 @@ export default function Edit({ product }: Props) {
                                 )}
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={formData.is_active}
-                                    onChange={(e) => updateFormData('is_active', e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                />
-                                <Label htmlFor="is_active">Kích hoạt sản phẩm</Label>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="is_active"
+                                        checked={formData.is_active}
+                                        onChange={(e) => updateFormData('is_active', e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <Label htmlFor="is_active">Kích hoạt sản phẩm</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="is_sold"
+                                        checked={formData.is_sold}
+                                        onChange={(e) => updateFormData('is_sold', e.target.checked)}
+                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <Label htmlFor="is_sold">Đánh dấu đã bán</Label>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-end space-x-4">

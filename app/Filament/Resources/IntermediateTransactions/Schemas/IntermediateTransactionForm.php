@@ -51,7 +51,7 @@ class IntermediateTransactionForm
                                             ->rows(3)
                                             ->columnSpanFull(),
                                     ])
-                                    ->columns(2),
+                                    ->columns(3),
                                 
                                 Section::make('Thông tin tài chính')
                                     ->description('Số tiền và phí giao dịch')
@@ -86,7 +86,7 @@ class IntermediateTransactionForm
                                             ->maxValue(168)
                                             ->suffix('giờ'),
                                     ])
-                                    ->columns(3),
+                                    ->columns(4),
                             ]),
                             
                         Tabs\Tab::make('Trạng thái & Thời gian')

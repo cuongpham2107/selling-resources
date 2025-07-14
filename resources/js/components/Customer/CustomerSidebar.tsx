@@ -3,7 +3,7 @@ import { formatVND } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 import { Customer } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowRightLeft, Coins, Home, MessageSquare, Package, Store, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, Coins, Home, MessageSquare, MessagesSquare, Package, ShoppingCart, Store, User, Users, Wallet, X } from 'lucide-react';
 import React, { useEffect } from 'react';
 
 interface CustomerSidebarProps {
@@ -65,6 +65,11 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
             icon: ArrowRightLeft,
         },
         {
+            title: 'Danh sách mua hàng',
+            href: '/customer/purchases',
+            icon: ShoppingCart,
+        },
+        {
             title: 'Cửa hàng cá nhân',
             href: '/customer/store',
             icon: Store,
@@ -77,7 +82,7 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
         {
             title: 'Chat tổng',
             href: '/customer/chat/general/room',
-            icon: MessageSquare,
+            icon: MessagesSquare,
         },
         {
             title: 'Chat giao dịch',
@@ -89,11 +94,7 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
             href: '/customer/wallet',
             icon: Wallet,
         },
-        {
-            title: 'Hệ thống điểm C',
-            href: '/customer/points',
-            icon: TrendingUp,
-        },
+       
         {
             title: 'Giới thiệu bạn bè',
             href: '/customer/referrals',

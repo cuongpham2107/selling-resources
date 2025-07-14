@@ -35,22 +35,31 @@ class TransactionChatController extends BaseCustomerController
      */
     private function getUnifiedTransactions(int $offset, int $perPage): array
     {
-        // Get store transactions
+        // Get store transactions - chỉ hiển thị khi đã PROCESSING (có thể chat)
         $storeTransactions = StoreTransaction::where(function ($query) {
                 $query->where('buyer_id', $this->customer->id)
                       ->orWhere('seller_id', $this->customer->id);
             })
             ->with(['product:id,name', 'buyer:id,username', 'seller:id,username'])
-            ->whereIn('status', ['processing', 'completed', 'disputed'])
+            ->whereIn('status', [
+                \App\States\StoreTransaction\ProcessingState::class,  // Đang giao dịch (có thể chat)
+                \App\States\StoreTransaction\CompletedState::class,   // Hoàn thành (vẫn có thể xem chat)
+                \App\States\StoreTransaction\DisputedState::class     // Tranh chấp (vẫn có thể chat)
+            ])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($transaction) {
+                /** @var \App\States\StoreTransaction\StoreTransactionState $status */
+                $status = $transaction->status;
+                
                 return [
                     'id' => $transaction->id,
                     'type' => 'store',
                     'created_at' => $transaction->created_at,
                     'updated_at' => $transaction->updated_at,
-                    'status' => $transaction->status,
+                    'status' => $status::class,
+                    'status_label' => $status->getLabel(),
+                    'status_color' => $status->getColor(),
                     'amount' => $transaction->amount,
                     'buyer_id' => $transaction->buyer_id,
                     'seller_id' => $transaction->seller_id,
@@ -59,6 +68,9 @@ class TransactionChatController extends BaseCustomerController
                     'product' => $transaction->product,
                     'description' => $transaction->product?->name ?? 'Sản phẩm không xác định',
                     'chat_url' => "/customer/chat/transaction/store/{$transaction->id}",
+                    'can_cancel' => $transaction->canBeCancelled(),
+                    'can_dispute' => $transaction->canBeDisputed(),
+                    'can_complete' => $transaction->canBeCompleted(),
                 ];
             });
 
@@ -68,16 +80,28 @@ class TransactionChatController extends BaseCustomerController
                       ->orWhere('seller_id', $this->customer->id);
             })
             ->with(['buyer:id,username', 'seller:id,username'])
-            ->whereIn('status', ['pending', 'confirmed', 'seller_sent', 'buyer_received', 'completed', 'disputed'])
+            ->whereIn('status', [
+                \App\States\IntermediateTransaction\PendingState::class,
+                \App\States\IntermediateTransaction\ConfirmedState::class,
+                \App\States\IntermediateTransaction\SellerSentState::class,
+                \App\States\IntermediateTransaction\CompletedState::class,
+                \App\States\IntermediateTransaction\DisputedState::class,
+                \App\States\IntermediateTransaction\CancelledState::class
+            ])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($transaction) {
+                /** @var \App\States\IntermediateTransaction\IntermediateTransactionState $status */
+                $status = $transaction->status;
+                
                 return [
                     'id' => $transaction->id,
                     'type' => 'intermediate',
                     'created_at' => $transaction->created_at,
                     'updated_at' => $transaction->updated_at,
-                    'status' => $transaction->status,
+                    'status' => $status::class,
+                    'status_label' => $status->getLabel(),             
+                    'status_color' => $status->getColor(),
                     'amount' => $transaction->amount,
                     'buyer_id' => $transaction->buyer_id,
                     'seller_id' => $transaction->seller_id,
@@ -179,8 +203,13 @@ class TransactionChatController extends BaseCustomerController
         
         // Determine other participant
         $otherParticipant = $this->getOtherParticipant($transaction);
+        
+        // Format transaction data to ensure consistency
+        $transactionData = $transaction->toArray();
+        $transactionData['status'] = $transaction->status::class; // Keep the state machine class name for frontend
+        
         return Inertia::render('customer/Chat/TransactionShow', [
-            'transaction' => $transaction,
+            'transaction' => $transactionData,
             'chatMessages' => $chatMessages,
             'otherParticipant' => $otherParticipant,
             'currentUser' => $this->customer,
@@ -197,6 +226,23 @@ class TransactionChatController extends BaseCustomerController
             abort(403, 'Bạn không có quyền truy cập cuộc trò chuyện này');
         }
 
+        // Check if transaction allows chatting
+        if (!$transaction->canChat()) {
+            // Render trang thông báo với thông tin về trạng thái giao dịch
+            $statusState = $transaction->status;
+            return Inertia::render('customer/Transactions/ChatNotAvailable', [
+                'transaction' => [
+                    'id' => $transaction->id,
+                    'transaction_code' => $transaction->transaction_code,
+                    'status' => $statusState instanceof \App\States\StoreTransaction\PendingState ? 'Chờ xác nhận' : 'Không xác định',
+                    'status_color' => $statusState instanceof \App\States\StoreTransaction\PendingState ? 'warning' : 'secondary',
+                    'can_be_confirmed' => $transaction->canBeConfirmed(),
+                    'is_seller' => $transaction->seller_id === $this->customer->id,
+                ],
+                'message' => 'Cuộc trò chuyện sẽ có sẵn khi người bán xác nhận đơn hàng.'
+            ]);
+        }
+
         $transaction->load([
             'product:id,name',
             'buyer:id,username',
@@ -209,11 +255,13 @@ class TransactionChatController extends BaseCustomerController
             ->with('sender:id,username')
             ->orderBy('created_at', 'asc')
             ->get();
+
+        
        
         $otherParticipant = $transaction->buyer_id === $this->customer->id ? $transaction->seller : $transaction->buyer;
         
 
-        return Inertia::render('customer/Chat/TransactionShow', [
+        return Inertia::render('customer/Chat/StoreTransactionShow', [
             'transaction' => $transaction,
             'chatMessages' => $chatMessages,
             'otherParticipant' => $otherParticipant,
@@ -255,6 +303,11 @@ class TransactionChatController extends BaseCustomerController
         // Check if user is participant in this transaction
         if ($transaction->buyer_id !== $this->customer->id && $transaction->seller_id !== $this->customer->id) {
             abort(403, 'Bạn không có quyền gửi tin nhắn trong cuộc trò chuyện này');
+        }
+
+        // Check if transaction allows chatting (chỉ cho phép chat khi PROCESSING)
+        if (!$transaction->canChat()) {
+            abort(403, 'Không thể gửi tin nhắn cho giao dịch ở trạng thái hiện tại. Giao dịch phải được người bán xác nhận trước.');
         }
 
         $validated = $this->validateChatMessage($request);

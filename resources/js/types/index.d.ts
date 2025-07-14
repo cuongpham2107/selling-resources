@@ -170,12 +170,33 @@ export interface StoreTransaction {
     product_id: number;
     amount: number;
     fee: number;
-    status: 'processing' | 'completed' | 'disputed' | 'cancelled';
+    total_amount?: number;
+    seller_receive_amount?: number;
+    description?: string;
+    status: string; // State machine class name
+    status_label?: string; // Human readable label
+    status_color?: string; // Badge color
     completed_at?: string;
-    auto_complete_at: string;
-    buyer_early_complete: boolean;
+    confirmed_at?: string;
+    cancelled_at?: string;
+    auto_complete_at?: string;
+    buyer_early_complete?: boolean;
     created_at: string;
     updated_at: string;
+    
+    // User roles (from backend transformation)
+    is_buyer?: boolean;
+    is_seller?: boolean;
+    
+    // Permissions based on current state
+    permissions?: {
+        can_confirm?: boolean;
+        can_cancel?: boolean;
+        can_complete?: boolean;
+        can_dispute?: boolean;
+        can_chat?: boolean;
+    };
+    
     buyer?: Customer;
     seller?: Customer;
     product?: StoreProduct;

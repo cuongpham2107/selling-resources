@@ -24,14 +24,14 @@ enum PointTransactionType: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::EARNED, self::EARN => 'Kiếm được',
+            self::EARNED, self::EARN => 'Kiếm được từ giao dịch',
             self::REFERRAL_BONUS => 'Thưởng giới thiệu',
-            self::SENT => 'Gửi đi', 
-            self::RECEIVED => 'Nhận được',
-            self::EXCHANGED => 'Đổi điểm',
+            self::SENT => 'Gửi cho người khác', 
+            self::RECEIVED => 'Nhận từ người khác',
+            self::EXCHANGED => 'Đổi thành tiền/hàng',
             self::SPEND => 'Tiêu dùng',
-            self::TRANSFER => 'Chuyển khoản',
-            self::ADMIN_ADJUST => 'Điều chỉnh admin',
+            self::TRANSFER => 'Chuyển điểm',
+            self::ADMIN_ADJUST => 'Điều chỉnh bởi admin',
         };
     }
 
@@ -45,8 +45,8 @@ enum PointTransactionType: string
     public function getDescription(): string
     {
         return match ($this) {
-            self::EARNED, self::EARN => 'Điểm kiếm được từ hoàn thành giao dịch',
-            self::REFERRAL_BONUS => 'Điểm thưởng từ việc giới thiệu bạn bè',
+            self::EARNED, self::EARN => 'Điểm kiếm được từ việc hoàn thành giao dịch mua/bán',
+            self::REFERRAL_BONUS => 'Điểm thưởng nhận được khi người được giới thiệu thực hiện giao dịch',
             self::SENT => 'Điểm gửi cho khách hàng khác',
             self::RECEIVED => 'Điểm nhận từ khách hàng khác',
             self::EXCHANGED => 'Điểm đổi thành tiền hoặc ưu đãi',

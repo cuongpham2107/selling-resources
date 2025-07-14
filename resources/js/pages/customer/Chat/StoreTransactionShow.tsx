@@ -20,6 +20,7 @@ import {
     Package,
     ShoppingCart
 } from 'lucide-react';
+import { statusConfigTransaction } from '@/lib/config';
 
 interface StoreTransactionShowProps {
     transaction: StoreTransaction;
@@ -37,7 +38,7 @@ export default function StoreTransactionShow({
     const { data, setData, post, processing, errors, reset } = useForm({
         message: '',
     });
-
+ console.log(transaction);
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -71,6 +72,8 @@ export default function StoreTransactionShow({
 
     const getStatusIcon = (status: string) => {
         switch (status) {
+            case 'pending':
+                return <Clock className="w-4 h-4 text-orange-500" />;
             case 'processing':
                 return <Clock className="w-4 h-4 text-blue-500" />;
             case 'completed':
@@ -85,13 +88,7 @@ export default function StoreTransactionShow({
     };
 
     const getStatusLabel = (status: string) => {
-        const statusLabels = {
-            processing: 'Đang xử lý',
-            completed: 'Hoàn thành',
-            disputed: 'Tranh chấp',
-            cancelled: 'Đã hủy',
-        };
-        return statusLabels[status as keyof typeof statusLabels] || status;
+        return statusConfigTransaction[status as keyof typeof statusConfigTransaction]?.label || 'Không xác định';
     };
 
     const isBuyer = transaction.buyer_id === currentUser.id;
@@ -187,7 +184,7 @@ export default function StoreTransactionShow({
                                 </div>
 
                                 {/* Message Input */}
-                                {transaction.status === 'processing' && (
+                                {(transaction.permissions?.can_chat || transaction.status === 'processing') && (
                                     <form onSubmit={handleSubmit} className="flex space-x-2">
                                         <Textarea
                                             value={data.message}
@@ -211,12 +208,14 @@ export default function StoreTransactionShow({
                                     <p className="text-red-500 text-sm mt-1">{errors.message}</p>
                                 )}
 
-                                {transaction.status !== 'processing' && (
+                                {!transaction.permissions?.can_chat && transaction.status !== 'processing' && (
                                     <Alert>
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertDescription>
-                                            Giao dịch đã {transaction.status === 'completed' ? 'hoàn thành' : transaction.status === 'disputed' ? 'có tranh chấp' : 'kết thúc'}. 
-                                            {transaction.status === 'completed' || transaction.status === 'cancelled' ? ' Không thể gửi tin nhắn mới.' : ''}
+                                            Giao dịch đã {transaction.status === 'completed' ? 'hoàn thành' : 
+                                                        transaction.status === 'disputed' ? 'có tranh chấp' : 
+                                                        transaction.status === 'cancelled' ? 'bị hủy' : 'kết thúc'}. 
+                                            {(transaction.status === 'completed' || transaction.status === 'cancelled') ? ' Không thể gửi tin nhắn mới.' : ''}
                                         </AlertDescription>
                                     </Alert>
                                 )}
@@ -334,7 +333,7 @@ export default function StoreTransactionShow({
                                 <CardTitle>Thao tác nhanh</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Link href={`/customer/transactions/${transaction.id}`}>
+                                <Link href={`/customer/store/transactions/${transaction.id}`}>
                                     <Button variant="outline" className="w-full justify-start">
                                         <Package className="w-4 h-4 mr-2" />
                                         Xem chi tiết giao dịch
