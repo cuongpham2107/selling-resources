@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->timestamp('password_changed_at')->nullable();
             $table->string('phone', 20)->nullable();
-            $table->enum('role', ['admin', 'support_admin', 'moderator_transaction', 'moderator_store', 'reviewer', 'user'])->default('user');
             $table->boolean('is_active')->default(true);
             $table->string('referral_code', 20)->unique();
             $table->unsignedBigInteger('referred_by')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('referred_by')->references('id')->on('customers')->onDelete('set null');
-            $table->index(['role', 'is_active']);
+            $table->index([ 'is_active']);
             $table->index('referral_code');
         });
     }

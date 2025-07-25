@@ -53,7 +53,6 @@ class DashboardController extends BaseCustomerController
             ->limit(5)
             ->get();
 
-        // Mock notifications - replace with real notifications
         $notifications = [
             [
                 'id' => '1',

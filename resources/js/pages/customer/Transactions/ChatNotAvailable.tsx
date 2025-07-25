@@ -14,6 +14,7 @@ import {
     Package,
     Info
 } from 'lucide-react';
+import { getStatusBadge } from '@/lib/config';
 
 interface ChatNotAvailableProps {
     transaction: {
@@ -28,34 +29,7 @@ interface ChatNotAvailableProps {
 }
 
 export default function ChatNotAvailable({ transaction, message }: ChatNotAvailableProps) {
-    const getStatusIcon = (color: string) => {
-        switch (color) {
-            case 'warning':
-                return Clock;
-            case 'success':
-                return CheckCircle;
-            case 'danger':
-                return AlertTriangle;
-            default:
-                return Clock;
-        }
-    };
-
-    const getStatusBadgeClass = (color: string) => {
-        switch (color) {
-            case 'warning':
-                return 'border-orange-200 text-orange-700 bg-orange-50';
-            case 'success':
-                return 'border-green-200 text-green-700 bg-green-50';
-            case 'danger':
-                return 'border-red-200 text-red-700 bg-red-50';
-            default:
-                return 'border-gray-200 text-gray-700 bg-gray-50';
-        }
-    };
-
-    const StatusIcon = getStatusIcon(transaction.status_color);
-
+   
     return (
         <CustomerLayout>
             <Head title={`Chat không khả dụng - Giao dịch #${transaction.id}`} />
@@ -79,13 +53,7 @@ export default function ChatNotAvailable({ transaction, message }: ChatNotAvaila
                             </p>
                         </div>
                     </div>
-                    <Badge 
-                        variant="outline" 
-                        className={`flex items-center space-x-1 ${getStatusBadgeClass(transaction.status_color)}`}
-                    >
-                        <StatusIcon className="w-4 h-4" />
-                        <span>{transaction.status}</span>
-                    </Badge>
+                   { getStatusBadge(transaction.status)}
                 </div>
 
                 {/* Main Alert */}
@@ -230,13 +198,7 @@ export default function ChatNotAvailable({ transaction, message }: ChatNotAvaila
                                 
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Trạng thái</p>
-                                    <Badge 
-                                        variant="outline" 
-                                        className={`${getStatusBadgeClass(transaction.status_color)} w-fit`}
-                                    >
-                                        <StatusIcon className="w-3 h-3 mr-1" />
-                                        {transaction.status}
-                                    </Badge>
+                                    {getStatusBadge(transaction.status)}
                                 </div>
 
                                 <div>
@@ -253,7 +215,7 @@ export default function ChatNotAvailable({ transaction, message }: ChatNotAvaila
                             <CardHeader>
                                 <CardTitle>Thao tác nhanh</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-2">
+                            <CardContent className="flex flex-col space-y-2">
                                 <Link href={`/customer/store/transactions/${transaction.id}`}>
                                     <Button variant="outline" className="w-full justify-start">
                                         <Package className="w-4 h-4 mr-2" />

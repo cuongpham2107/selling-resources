@@ -1,5 +1,5 @@
 import { useSidebar } from '@/contexts/SidebarContext';
-import { formatVND } from '@/lib/currency';
+import { formatPoints, formatVND } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 import { Customer } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -65,7 +65,7 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
             icon: ArrowRightLeft,
         },
         {
-            title: 'Danh sách mua hàng',
+            title: 'Danh sách mua bán',
             href: '/customer/purchases',
             icon: ShoppingCart,
         },
@@ -188,9 +188,18 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
                                 <div className="flex items-center space-x-2">
                                     <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
                                     <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Số dư</span>
-                                </div>
-                                <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                                </div> 
+                                <div className="text-sm font-bold text-green-600 dark:text-green-400 underline">
                                     {formatVND(customer.balance?.balance || 0)}
+                                </div>
+                            </div> 
+                            <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center space-x-2">
+                                    <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Số tiền bị khoá</span>
+                                </div>
+                                <div className="text-sm font-bold text-red-600 dark:text-red-400 underline">
+                                    {formatVND(customer.balance?.locked_balance || 0)}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between p-3">
@@ -198,8 +207,8 @@ export function CustomerSidebar({ customer }: CustomerSidebarProps) {
                                     <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                     <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Điểm C</span>
                                 </div>
-                                <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                                    {formatVND(customer.points?.points || 0)}
+                                <div className="text-sm font-bold text-amber-600 dark:text-amber-400 underline">
+                                    {formatPoints(customer.points?.points || 0)}
                                 </div>
                             </div>
                         </div>

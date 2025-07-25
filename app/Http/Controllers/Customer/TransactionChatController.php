@@ -225,17 +225,14 @@ class TransactionChatController extends BaseCustomerController
         if ($transaction->buyer_id !== $this->customer->id && $transaction->seller_id !== $this->customer->id) {
             abort(403, 'Bạn không có quyền truy cập cuộc trò chuyện này');
         }
-
+        
         // Check if transaction allows chatting
-        if (!$transaction->canChat()) {
-            // Render trang thông báo với thông tin về trạng thái giao dịch
-            $statusState = $transaction->status;
+        if (!$transaction->canChat() && $transaction->buyer_early_complete !== true) {
             return Inertia::render('customer/Transactions/ChatNotAvailable', [
                 'transaction' => [
                     'id' => $transaction->id,
                     'transaction_code' => $transaction->transaction_code,
-                    'status' => $statusState instanceof \App\States\StoreTransaction\PendingState ? 'Chờ xác nhận' : 'Không xác định',
-                    'status_color' => $statusState instanceof \App\States\StoreTransaction\PendingState ? 'warning' : 'secondary',
+                    'status' => $transaction->status,
                     'can_be_confirmed' => $transaction->canBeConfirmed(),
                     'is_seller' => $transaction->seller_id === $this->customer->id,
                 ],
@@ -244,9 +241,9 @@ class TransactionChatController extends BaseCustomerController
         }
 
         $transaction->load([
-            'product:id,name',
-            'buyer:id,username',
-            'seller:id,username'
+            'product:id,name,description',
+            'buyer:id,username,email,created_at',
+            'seller:id,username,email,created_at'
         ]);
 
         // Get transaction chat messages

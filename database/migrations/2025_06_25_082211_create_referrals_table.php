@@ -24,6 +24,7 @@ return new class extends Migration
             $table->foreign('referred_id')->references('id')->on('customers')->onDelete('cascade');
             $table->unique(['referrer_id', 'referred_id']);
             $table->index('referrer_id');
+             $table->enum('status', ['active', 'inactive', 'pending'])->default('active')->after('referred_id');
         });
     }
 

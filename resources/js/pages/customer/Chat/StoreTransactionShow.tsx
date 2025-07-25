@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
     ArrowLeft, 
     MessageSquare, 
@@ -15,12 +14,12 @@ import {
     User, 
     Calendar,
     AlertCircle,
-    CheckCircle,
-    Clock,
     Package,
     ShoppingCart
 } from 'lucide-react';
-import { statusConfigTransaction } from '@/lib/config';
+import { getStatusAlert, getStatusBadge } from '@/lib/config';
+import { formatDateTime } from '@/lib/date';
+import { formatVND } from '@/lib/currency';
 
 interface StoreTransactionShowProps {
     transaction: StoreTransaction;
@@ -38,7 +37,6 @@ export default function StoreTransactionShow({
     const { data, setData, post, processing, errors, reset } = useForm({
         message: '',
     });
- console.log(transaction);
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -46,49 +44,11 @@ export default function StoreTransactionShow({
             return;
         }
 
-        post(`/customer/chat/store-transaction/${transaction.id}`, {
+        post(`/customer/chat/transaction/store/${transaction.id}`, {
             onSuccess: () => {
                 reset('message');
             },
         });
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
-
-    const formatVND = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-        }).format(amount);
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return <Clock className="w-4 h-4 text-orange-500" />;
-            case 'processing':
-                return <Clock className="w-4 h-4 text-blue-500" />;
-            case 'completed':
-                return <CheckCircle className="w-4 h-4 text-green-500" />;
-            case 'disputed':
-                return <AlertCircle className="w-4 h-4 text-red-500" />;
-            case 'cancelled':
-                return <AlertCircle className="w-4 h-4 text-gray-500" />;
-            default:
-                return <Clock className="w-4 h-4 text-gray-500" />;
-        }
-    };
-
-    const getStatusLabel = (status: string) => {
-        return statusConfigTransaction[status as keyof typeof statusConfigTransaction]?.label || 'Không xác định';
     };
 
     const isBuyer = transaction.buyer_id === currentUser.id;
@@ -116,10 +76,7 @@ export default function StoreTransactionShow({
                             </p>
                         </div>
                     </div>
-                    <Badge variant="outline" className="flex items-center space-x-1">
-                        {getStatusIcon(transaction.status)}
-                        <span>{getStatusLabel(transaction.status)}</span>
-                    </Badge>
+                    {getStatusBadge(transaction.status)}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -174,7 +131,7 @@ export default function StoreTransactionShow({
                                                                 ? 'text-blue-100'
                                                                 : 'text-gray-500'
                                                         }`}>
-                                                            {formatDate(chat.created_at)}
+                                                            {formatDateTime(chat.created_at)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -184,7 +141,7 @@ export default function StoreTransactionShow({
                                 </div>
 
                                 {/* Message Input */}
-                                {(transaction.permissions?.can_chat || transaction.status === 'processing') && (
+                                {(transaction.permissions?.can_chat || transaction.status === 'App\\States\\StoreTransaction\\ProcessingState') && (
                                     <form onSubmit={handleSubmit} className="flex space-x-2">
                                         <Textarea
                                             value={data.message}
@@ -208,16 +165,8 @@ export default function StoreTransactionShow({
                                     <p className="text-red-500 text-sm mt-1">{errors.message}</p>
                                 )}
 
-                                {!transaction.permissions?.can_chat && transaction.status !== 'processing' && (
-                                    <Alert>
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription>
-                                            Giao dịch đã {transaction.status === 'completed' ? 'hoàn thành' : 
-                                                        transaction.status === 'disputed' ? 'có tranh chấp' : 
-                                                        transaction.status === 'cancelled' ? 'bị hủy' : 'kết thúc'}. 
-                                            {(transaction.status === 'completed' || transaction.status === 'cancelled') ? ' Không thể gửi tin nhắn mới.' : ''}
-                                        </AlertDescription>
-                                    </Alert>
+                                {!transaction.permissions?.can_chat && transaction.status !== 'App\\States\\StoreTransaction\\ProcessingState' && (
+                                    getStatusAlert(transaction.status)
                                 )}
                             </CardContent>
                         </Card>
@@ -235,8 +184,11 @@ export default function StoreTransactionShow({
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-600">Sản phẩm</p>
-                                    <p className="font-semibold">{transaction.product?.name || 'N/A'}</p>
+                                    <div className='flex flex-row space-x-2 items-center'>
+                                        <p className="text-sm font-medium text-gray-600">Sản phẩm: </p>
+                                        <p className="font-semibold">{transaction.product?.name || 'N/A'}</p>
+                                    </div>
+                                    <span className='text-xs'><span className='text-sm font-medium text-gray-600' >Mô tả:</span> {transaction.product?.description}</span>
                                 </div>
 
                                 <Separator />
@@ -260,7 +212,7 @@ export default function StoreTransactionShow({
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Phí giao dịch</p>
                                     <p className="text-sm text-orange-600">
-                                        {formatVND(transaction.fee)}
+                                        {isBuyer ? formatVND(0) : formatVND(transaction.fee)}
                                     </p>
                                 </div>
 
@@ -268,10 +220,7 @@ export default function StoreTransactionShow({
 
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Trạng thái</p>
-                                    <Badge variant="outline" className="flex items-center space-x-1 w-fit">
-                                        {getStatusIcon(transaction.status)}
-                                        <span>{getStatusLabel(transaction.status)}</span>
-                                    </Badge>
+                                    {getStatusBadge(transaction.status)}
                                 </div>
 
                                 <Separator />
@@ -280,7 +229,7 @@ export default function StoreTransactionShow({
                                     <p className="text-sm font-medium text-gray-600">Ngày tạo</p>
                                     <p className="text-sm flex items-center">
                                         <Calendar className="w-4 h-4 mr-1" />
-                                        {formatDate(transaction.created_at)}
+                                        {formatDateTime(transaction.created_at)}
                                     </p>
                                 </div>
 
@@ -289,7 +238,7 @@ export default function StoreTransactionShow({
                                         <p className="text-sm font-medium text-gray-600">Ngày hoàn thành</p>
                                         <p className="text-sm flex items-center">
                                             <Calendar className="w-4 h-4 mr-1" />
-                                            {formatDate(transaction.completed_at)}
+                                            {formatDateTime(transaction.completed_at)}
                                         </p>
                                     </div>
                                 )}
@@ -306,7 +255,7 @@ export default function StoreTransactionShow({
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-600">Tên đăng nhập</p>
+                                    <p className="text-sm font-medium text-gray-600">Tên người dùng</p>
                                     <p className="font-semibold">{otherParticipant.username}</p>
                                 </div>
                                 
@@ -321,7 +270,7 @@ export default function StoreTransactionShow({
                                     <p className="text-sm font-medium text-gray-600">Ngày tham gia</p>
                                     <p className="text-sm flex items-center">
                                         <Calendar className="w-4 h-4 mr-1" />
-                                        {formatDate(otherParticipant.created_at)}
+                                        {formatDateTime(otherParticipant.created_at)}
                                     </p>
                                 </div>
                             </CardContent>
@@ -340,7 +289,7 @@ export default function StoreTransactionShow({
                                     </Button>
                                 </Link>
 
-                                {transaction.status === 'disputed' && transaction.dispute && (
+                                {transaction.status === 'App\\States\\StoreTransaction\\DisputedState' && transaction.dispute && (
                                     <Link href={`/customer/disputes/${transaction.dispute.id}`}>
                                         <Button variant="outline" className="w-full justify-start">
                                             <AlertCircle className="w-4 h-4 mr-2" />

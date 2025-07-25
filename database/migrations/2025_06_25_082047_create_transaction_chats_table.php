@@ -18,9 +18,10 @@ return new class extends Migration
             $table->unsignedBigInteger('sender_id');
             $table->text('message');
             $table->json('images')->nullable(); // Array các đường dẫn ảnh
+            $table->json('files')->nullable()->comment('Array các đường dẫn file đính kèm');
             $table->boolean('is_deleted')->default(false);
             $table->timestamps();
-
+ 
             $table->foreign('sender_id')->references('id')->on('customers')->onDelete('cascade');
             $table->index(['transaction_id', 'transaction_type']);
             $table->index('created_at');

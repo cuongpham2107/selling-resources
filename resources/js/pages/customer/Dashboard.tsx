@@ -158,7 +158,7 @@ export default function CustomerDashboard({
                                         </span>
                                     </div>
                                     <Progress 
-                                        value={(item.value / item.total) * 100} 
+                                        value={item.total === 0 ? 0 : (item.value / item.total) * 100}
                                         className="h-2"
                                     />
                                 </div>

@@ -64,13 +64,12 @@ class LoginRequest extends FormRequest
             ]);
         }
         
-        if (!$customer->hasVerifiedEmail()) {
-            Auth::guard('customer')->logout();
-            
-            throw ValidationException::withMessages([
-                'username' => 'Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư để xác thực tài khoản.',
-            ]);
-        }
+        // if (!$customer->hasVerifiedEmail()) {
+        //     Auth::guard('customer')->logout();
+        //     throw ValidationException::withMessages([
+        //         'username' => 'Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư để xác thực tài khoản.',
+        //     ]);
+        // }
 
         RateLimiter::clear($this->throttleKey());
     }

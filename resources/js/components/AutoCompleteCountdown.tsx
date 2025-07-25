@@ -78,7 +78,7 @@ export const AutoCompleteCountdown: React.FC<AutoCompleteCountdownProps> = ({
     return (
         <Badge variant={getVariant()} className={className}>
             {showIcon && getIcon()}
-            Tự động hoàn thành sau: {formatTimeLeft(timeLeft)}
+            Tự động hoàn thành sau: {formatTimeLeft(timeLeft)} (nếu không có tranh chấp)
         </Badge>
     );
 };

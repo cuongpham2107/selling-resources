@@ -1,5 +1,7 @@
-import { AlertTriangle, ArrowRightLeft, CheckCircle, Clock, XCircle } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRightLeft, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge"; 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { config } from "process";
 
 export const statusConfigTransaction = {
     // State machine class names
@@ -105,4 +107,19 @@ export const getStatusBadge = (status: string) => {
     );
 };
 
+
+export const getStatusAlert = (status: string) => {
+    const config = statusConfigTransaction[status as keyof typeof statusConfigTransaction];
+    if(!config) return null;
+
+    const Icon = config.icon
+    return (
+        <Alert>
+            <Icon className="h-4 w-4" />
+            <AlertDescription>
+                {config.description}
+            </AlertDescription>
+        </Alert>
+    )
+}
 

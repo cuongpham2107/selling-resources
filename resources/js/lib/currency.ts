@@ -15,7 +15,7 @@ export function formatVND(amount: number, options?: Intl.NumberFormatOptions): s
  * Format points
  */
 export function formatPoints(points: number): string {
-    return `${points.toLocaleString('vi-VN')} C`;
+    return `${points.toLocaleString('vi-VN')} P`;
 }
 
 /**

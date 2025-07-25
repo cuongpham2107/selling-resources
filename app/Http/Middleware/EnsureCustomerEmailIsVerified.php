@@ -18,11 +18,11 @@ class EnsureCustomerEmailIsVerified
     {
         $customer = Auth::guard('customer')->user();
         
-        if (!$customer || !$customer->hasVerifiedEmail()) {
-            return $request->expectsJson()
-                ? abort(403, 'Email của bạn chưa được xác thực.')
-                : redirect()->route('customer.verification.notice');
-        }
+        // if (!$customer || !$customer->hasVerifiedEmail()) {
+        //     return $request->expectsJson()
+        //         ? abort(403, 'Email của bạn chưa được xác thực.')
+        //         : redirect()->route('customer.verification.notice');
+        // }
 
         return $next($request);
     }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('price', 15, 2);
             $table->text('content'); // Nội dung sản phẩm (account, key, ...)
             $table->boolean('is_sold')->default(false);
+            $table->timestamp('sold_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_deleted')->default(false);
             $table->unsignedBigInteger('deleted_by')->nullable(); // Admin/moderator xóa

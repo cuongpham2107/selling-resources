@@ -15,7 +15,7 @@ class CustomerBalanceForm
                 Select::make('customer_id')
                     ->label('Khách hàng')
                     ->relationship('customer', 'username')
-                    ->disabled()
+                    // ->disabled()
                     ->required()
                     ->searchable()
                     ->preload(),

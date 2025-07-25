@@ -19,16 +19,18 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->decimal('amount', 15, 2);
             $table->decimal('fee', 15, 2)->default(0);
-            $table->enum('status', ['processing', 'completed', 'disputed', 'cancelled'])->default('processing');
+            $table->string('status')->default(\App\States\StoreTransaction\PendingState::class);
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('auto_complete_at')->nullable(); // Sau 3 ngày tự hoàn thành
             $table->boolean('buyer_early_complete')->default(false); // Người mua kết thúc sớm
+             $table->timestamp('confirmed_at')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();
 
             $table->foreign('buyer_id')->references('id')->on('customers')->onDelete('cascade');
             $table->foreign('seller_id')->references('id')->on('customers')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('store_products')->onDelete('cascade');
-            $table->index(['status', 'auto_complete_at']);
+            $table->index(['auto_complete_at']);
             $table->index('transaction_code');
         });
     }

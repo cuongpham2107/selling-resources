@@ -16,11 +16,13 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('sender_id');
             $table->text('message');
-            $table->unsignedBigInteger('attached_product_id')->nullable(); // Sản phẩm được đính kèm
             $table->boolean('is_deleted')->default(false);
             $table->unsignedBigInteger('deleted_by')->nullable(); // Admin/moderator xóa
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
+            $table->unsignedBigInteger('attached_product_id')->nullable();
+
+            $table->foreign('attached_product_id')->references('id')->on('store_products')->onDelete('set null');
 
             $table->foreign('sender_id')->references('id')->on('customers')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('customers')->onDelete('set null');

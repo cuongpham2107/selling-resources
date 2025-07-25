@@ -42,17 +42,24 @@ class CancelPendingStoreTransactionTransition extends Transition
      */
     public function handle(): StoreTransaction
     {
-        // Hoàn trả điểm cho người mua khi hủy đơn PENDING
+       
+        // Hoàn trả tiền cho người mua khi hủy đơn PENDING
         $buyer = $this->storeTransaction->buyer;
-        $buyerPoints = $buyer->points(); // Lấy CustomerPoint relation
+        $buyerBalance = $buyer->balance(); // Lấy Customer Balance relation
         
-        if ($buyerPoints) {
-            $buyerPoints->increment('points', $this->storeTransaction->amount);
+        if ($buyerBalance) {
+            $buyerBalance->increment('balance', $this->storeTransaction->amount);
+            $buyerBalance->decrement('locked_balance', $this->storeTransaction->amount);
         }
 
         // Cập nhật thời gian hủy
         $this->storeTransaction->cancelled_at = now();
         $this->storeTransaction->save();
+
+        //Cập nhập lại restore của sản phẩm trong giỏ hàng
+        $this->storeTransaction->product->markAsAvailable();
+
+       
 
         // Log the transition
         logger()->info("StoreTransaction {$this->storeTransaction->id} cancelled from PENDING state", [
@@ -60,6 +67,8 @@ class CancelPendingStoreTransactionTransition extends Transition
             'seller_id' => $this->storeTransaction->seller_id,
             'buyer_id' => $this->storeTransaction->buyer_id,
             'amount' => $this->storeTransaction->amount,
+            'status' => 'cancelled',
+            'previous_status' => 'pending',
             'refunded_points' => $this->storeTransaction->amount,
             'cancelled_at' => $this->storeTransaction->cancelled_at,
         ]);

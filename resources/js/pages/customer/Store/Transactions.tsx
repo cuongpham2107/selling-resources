@@ -14,6 +14,7 @@ import {
     Clock
 } from 'lucide-react';
 import type { Customer } from '@/types';
+import { getStatusBadge } from '@/lib/config';
 
 interface StoreTransactionItem {
     id: number;
@@ -91,28 +92,7 @@ export default function StoreTransactions({
     pageDescription = "Quản lý các giao dịch mua bán sản phẩm",
     showOnlyPurchases = false
 }: Props) {
-    const getStatusBadge = (statusLabel: string, statusColor: string) => {
-        const colorClass = getStatusColorClass(statusColor);
-        return <Badge variant="outline" className={colorClass}>{statusLabel}</Badge>;
-    };
-    console.log(currentUser);
-
-    const getStatusColorClass = (color: string) => {
-        switch (color) {
-            case 'warning':
-                return 'bg-orange-100 text-orange-800 border-orange-300';
-            case 'primary':
-                return 'bg-blue-100 text-blue-800 border-blue-300';
-            case 'success':
-                return 'bg-green-100 text-green-800 border-green-300';
-            case 'danger':
-                return 'bg-red-100 text-red-800 border-red-300';
-            case 'secondary':
-                return 'bg-gray-100 text-gray-800 border-gray-300';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-300';
-        }
-    };
+    console.log(transactions)
 
     const getRoleInTransaction = (transaction: StoreTransactionItem) => {
         if (transaction.is_buyer) {
@@ -181,7 +161,7 @@ export default function StoreTransactions({
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <RoleIcon className="h-4 w-4 text-gray-500" />
                                                         <span className="text-sm text-gray-600">
-                                                            {role === 'buyer' ? 'Đã mua từ' : 'Đã bán cho'} 
+                                                            {role === 'buyer' ? 'Mua từ' : 'Bán cho'} 
                                                             <span className="font-medium text-gray-900 ml-1">{partner}</span>
                                                         </span>
                                                     </div>
@@ -201,7 +181,7 @@ export default function StoreTransactions({
                                                 <div className="text-xl font-bold text-green-600 mb-2">
                                                     {formatVND(transaction.amount)}
                                                 </div>
-                                                {getStatusBadge(transaction.status_label, transaction.status_color)}
+                                                {getStatusBadge(transaction.status)}
                                                 <div className="mt-3">
                                                     <Button 
                                                         size="sm" 

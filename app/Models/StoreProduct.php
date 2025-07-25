@@ -66,8 +66,15 @@ class StoreProduct extends Model
 
     public function markAsSold(): bool
     {
-        $this->is_sold = true;
+        $this->is_sold = 1;
         $this->sold_at = now();
+        return $this->save();
+    }
+    // Chuyển trạng thái sẩn thành is_sold = false
+    public function markAsAvailable()
+    {
+        $this->is_sold = 0;
+        $this->sold_at = null;
         return $this->save();
     }
 

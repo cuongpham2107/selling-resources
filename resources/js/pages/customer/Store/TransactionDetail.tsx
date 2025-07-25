@@ -32,7 +32,7 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
     // Ensure amount and fee are numbers
     const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount ?? 0;
     const fee = typeof transaction.fee === 'string' ? parseFloat(transaction.fee) : transaction.fee ?? 0;
-    
+
 
 
     return (
@@ -41,8 +41,8 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col items-start gap-4">
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             onClick={() => router.get('/customer/store/transactions')}
                             className="flex items-center gap-2"
                         >
@@ -123,18 +123,17 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
 
                                     {/* Pending Confirmation */}
                                     <div className="flex items-center gap-3">
-                                        <div className={`h-5 w-5 rounded-full border-2 ${
-                                            transaction.status === 'pending' ? 'border-orange-600 bg-orange-100' :
-                                            ['processing', 'completed', 'disputed'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
-                                            'border-gray-300'
-                                        }`}>
-                                            {['processing', 'completed', 'disputed'].includes(transaction.status) && (
+                                        <div className={`h-5 w-5 rounded-full border-2 ${transaction.status === 'App\\States\\StoreTransaction\\PendingState' ? 'border-orange-600 bg-orange-100' :
+                                                ['App\\States\\StoreTransaction\\ProcessingState', 'App\\States\\StoreTransaction\\CompletedState', 'App\\States\\StoreTransaction\\DisputedState'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
+                                                    'border-gray-300'
+                                            }`}>
+                                            {['App\\States\\StoreTransaction\\ProcessingState', 'App\\States\\StoreTransaction\\CompletedState', 'App\\States\\StoreTransaction\\DisputedState'].includes(transaction.status) && (
                                                 <CheckCircle className="h-5 w-5 text-white" />
                                             )}
                                         </div>
                                         <div>
                                             <p className="font-medium">Chờ xác nhận</p>
-                                            {transaction.status === 'pending' && (
+                                            {transaction.status === 'App\\States\\StoreTransaction\\PendingState' && (
                                                 <p className="text-sm text-gray-600">
                                                     Chờ người bán xác nhận đơn hàng
                                                 </p>
@@ -149,23 +148,22 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
 
                                     {/* Processing */}
                                     <div className="flex items-center gap-3">
-                                        <div className={`h-5 w-5 rounded-full border-2 ${
-                                            transaction.status === 'processing' ? 'border-blue-600 bg-blue-100' :
-                                            ['completed', 'disputed'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
-                                            'border-gray-300'
-                                        }`}>
-                                            {['completed', 'disputed'].includes(transaction.status) && (
+                                        <div className={`h-5 w-5 rounded-full border-2 ${transaction.status === 'App\\States\\StoreTransaction\\PendingState' ? 'border-blue-600 bg-blue-100' :
+                                                ['App\\States\\StoreTransaction\\CompletedState', 'App\\States\\StoreTransaction\\DisputedState'].includes(transaction.status) ? 'border-green-600 bg-green-600' :
+                                                    'border-gray-300'
+                                            }`}>
+                                            {['App\\States\\StoreTransaction\\CompletedState', 'App\\States\\StoreTransaction\\DisputedState'].includes(transaction.status) && (
                                                 <CheckCircle className="h-5 w-5 text-white" />
                                             )}
                                         </div>
                                         <div>
                                             <p className="font-medium">Đang giao dịch</p>
-                                            {transaction.status === 'processing' && (
+                                            {transaction.status === 'App\\States\\StoreTransaction\\ProcessingState' && (
                                                 <div className="text-sm text-gray-600">
                                                     <p>Chờ xác nhận từ người mua</p>
                                                     {transaction.auto_complete_at && (
                                                         <div className="mt-2">
-                                                            <AutoCompleteCountdown 
+                                                            <AutoCompleteCountdown
                                                                 autoCompleteAt={transaction.auto_complete_at}
                                                                 className="text-xs"
                                                             />
@@ -177,7 +175,7 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                                     </div>
 
                                     {/* Completed/Disputed */}
-                                    {transaction.status === 'completed' && (
+                                    {transaction.status === 'App\\States\\StoreTransaction\\CompletedState' && (
                                         <div className="flex items-center gap-3">
                                             <CheckCircle className="h-5 w-5 text-green-600" />
                                             <div>
@@ -192,7 +190,7 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                                         </div>
                                     )}
 
-                                    {transaction.status === 'disputed' && (
+                                    {transaction.status === 'App\\States\\StoreTransaction\\DisputedState' && (
                                         <div className="flex items-center gap-3">
                                             <AlertTriangle className="h-5 w-5 text-red-600" />
                                             <div>
@@ -202,7 +200,7 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                                         </div>
                                     )}
 
-                                    {transaction.status === 'cancelled' && (
+                                    {transaction.status === 'App\\States\\StoreTransaction\\CancelledState' && (
                                         <div className="flex items-center gap-3">
                                             <AlertTriangle className="h-5 w-5 text-gray-600" />
                                             <div>
@@ -259,12 +257,12 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Phí giao dịch:</span>
-                                    <span className="font-medium">{formatVND(transaction.fee)}</span>
+                                    {isSeller ? <span className="font-medium">{formatVND(transaction.fee)}</span> : <span className="font-medium">0</span>}
                                 </div>
-                                   
+
                                 <div className="flex justify-between font-semibold">
                                     <span>Tổng cộng:</span>
-                                    <span>{formatVND(amount + fee, { maximumFractionDigits: 0 })}</span>
+                                    {isSeller ? <span>{formatVND(transaction.amount - transaction.fee)}</span> : <span>{formatVND(transaction.amount)}</span>}
                                 </div>
                                 {isSeller && (
                                     <div className="flex justify-between text-green-600 font-medium">
@@ -276,19 +274,21 @@ export default function TransactionDetail({ transaction, currentUser }: Props) {
                         </Card>
 
                         {/* Actions */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Hành động</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <StoreTransactionActions 
-                                    transaction={transaction}
-                                    isBuyer={isBuyer}
-                                    size="default"
-                                    variant="full"
-                                />
-                            </CardContent>
-                        </Card>
+                        {transaction.status !== 'App\\States\\StoreTransaction\\CompletedState' && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Hành động</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <StoreTransactionActions
+                                        transaction={transaction}
+                                        isBuyer={isBuyer}
+                                        size="default"
+                                        variant="full"
+                                    />
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 </div>
             </div>

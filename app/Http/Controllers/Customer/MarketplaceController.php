@@ -328,6 +328,7 @@ class MarketplaceController extends BaseCustomerController
                 'amount' => $product->price,
                 'fee' => $product->price * 0.01, // Phí 1% cho store transaction
                 'status' => \App\States\StoreTransaction\PendingState::class,
+                
             ]);
 
             // Bước 8: Đặt thời gian tự động hoàn thành (mặc định 72 giờ)
@@ -336,6 +337,10 @@ class MarketplaceController extends BaseCustomerController
             if (!$this->customer->balance->deductBalance($product->price)) {
                 throw new \Exception('Không thể trừ tiền từ số dư.');
             }
+            // Nếu trừ tiền thành công, tăng locked_balance lên
+            $this->customer->balance->increment('locked_balance', $product->price);
+
+
             
             // Bước 10: Đánh dấu sản phẩm đã được bán
             $product->update(['is_sold' => true]);
@@ -343,7 +348,7 @@ class MarketplaceController extends BaseCustomerController
             // Bước 11: Tạo bản ghi wallet transaction để tracking
             \App\Models\WalletTransaction::create([
                 'customer_id' => $this->customer->id,
-                'type' => 'debit', // Trừ tiền
+                'type' => 'buy', // Trừ tiền
                 'transaction_type' => 'store_purchase',
                 'amount' => $product->price,
                 'fee' => $transaction->fee,
@@ -419,7 +424,7 @@ class MarketplaceController extends BaseCustomerController
                 // Create wallet transaction record for buyer
                 \App\Models\WalletTransaction::create([
                     'customer_id' => $this->customer->id,
-                    'type' => 'debit',
+                    'type' => 'buy',
                     'transaction_type' => 'store_purchase',
                     'amount' => $totalAmount,
                     'description' => "Mua sản phẩm: {$product->name}",

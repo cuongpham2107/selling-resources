@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('point_transactions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id');
-            $table->enum('type', ['earned', 'referral_bonus', 'sent', 'received', 'exchanged']);
-            $table->decimal('amount', 15, 2);
-            $table->decimal('balance_after', 15, 2);
+            $table->string('type');// nhận điểm, mua hàng, giao dịch 
+            $table->integer('amount');
+            $table->integer('balance_after');
             $table->string('related_transaction_type')->nullable(); // 'intermediate' hoặc 'store'
             $table->unsignedBigInteger('related_transaction_id')->nullable();
             $table->unsignedBigInteger('related_customer_id')->nullable(); // Người gửi/nhận

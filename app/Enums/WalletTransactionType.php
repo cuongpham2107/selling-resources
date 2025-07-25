@@ -4,20 +4,20 @@ namespace App\Enums;
 
 enum WalletTransactionType: string
 {
-    case DEBIT = 'debit';
+    // deposit', 'withdrawal', 'buy', 'sell'
     case DEPOSIT = 'deposit';
     case WITHDRAWAL = 'withdrawal';
-    case TRANSFER_IN = 'transfer_in';
-    case TRANSFER_OUT = 'transfer_out';
+    case BUY = 'buy';
+    case SELL = 'sell';
+
 
     public function label(): string
     {
         return match($this) {
-            self::DEBIT => 'Trừ tiền',
             self::DEPOSIT => 'Nạp tiền',
             self::WITHDRAWAL => 'Rút tiền',
-            self::TRANSFER_IN => 'Nhận chuyển khoản',
-            self::TRANSFER_OUT => 'Chuyển khoản',
+            self::BUY => 'Mua',
+            self::SELL => 'Bán',
         };
     }
 

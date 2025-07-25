@@ -20,7 +20,7 @@ return new class extends Migration
             $table->json('evidence')->nullable(); // Bằng chứng (ảnh, file)
             $table->enum('status', ['pending', 'processing', 'resolved', 'cancelled'])->default('pending');
             $table->unsignedBigInteger('assigned_to')->nullable(); // Admin/moderator được phân công
-            $table->text('resolution')->nullable(); // Kết quả xử lý
+            $table->text('admin_notes')->nullable(); // Kết quả xử lý
             $table->enum('result', ['refund_buyer', 'pay_seller', 'partial_refund'])->nullable();
             $table->timestamp('resolved_at')->nullable();
             $table->timestamps();

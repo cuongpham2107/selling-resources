@@ -4,15 +4,9 @@ namespace App\Enums;
 
 enum PointTransactionType: string
 {
-    case EARNED = 'earned';
-    case EARN = 'earn';
-    case REFERRAL_BONUS = 'referral_bonus';
-    case SENT = 'sent';
-    case RECEIVED = 'received';
-    case EXCHANGED = 'exchanged';
-    case SPEND = 'spend';
-    case TRANSFER = 'transfer';
-    case ADMIN_ADJUST = 'admin_adjust';
+    case ABOUT_CUSTOMER = 'about_customer';
+    case STORE_TRANSACTIONS = 'store_transactions';
+    case INTERMEDIATE_TRANSACTIONS = 'intermediate_transactions';
 
     /**
      * Get Vietnamese label for the enum value
@@ -24,14 +18,9 @@ enum PointTransactionType: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::EARNED, self::EARN => 'Kiếm được từ giao dịch',
-            self::REFERRAL_BONUS => 'Thưởng giới thiệu',
-            self::SENT => 'Gửi cho người khác', 
-            self::RECEIVED => 'Nhận từ người khác',
-            self::EXCHANGED => 'Đổi thành tiền/hàng',
-            self::SPEND => 'Tiêu dùng',
-            self::TRANSFER => 'Chuyển điểm',
-            self::ADMIN_ADJUST => 'Điều chỉnh bởi admin',
+            self::ABOUT_CUSTOMER => 'Giới thiệu',
+            self::STORE_TRANSACTIONS => 'Mua hàng',
+            self::INTERMEDIATE_TRANSACTIONS => 'Giao dịch',
         };
     }
 
@@ -45,14 +34,9 @@ enum PointTransactionType: string
     public function getDescription(): string
     {
         return match ($this) {
-            self::EARNED, self::EARN => 'Điểm kiếm được từ việc hoàn thành giao dịch mua/bán',
-            self::REFERRAL_BONUS => 'Điểm thưởng nhận được khi người được giới thiệu thực hiện giao dịch',
-            self::SENT => 'Điểm gửi cho khách hàng khác',
-            self::RECEIVED => 'Điểm nhận từ khách hàng khác',
-            self::EXCHANGED => 'Điểm đổi thành tiền hoặc ưu đãi',
-            self::SPEND => 'Điểm tiêu dùng cho dịch vụ',
-            self::TRANSFER => 'Điểm chuyển giữa các tài khoản',
-            self::ADMIN_ADJUST => 'Điều chỉnh điểm bởi quản trị viên',
+           self::ABOUT_CUSTOMER => 'Giới thiệu khách hàng',
+           self::STORE_TRANSACTIONS => 'Mua hàng từ cửa hàng trên chợ',
+           self::INTERMEDIATE_TRANSACTIONS => 'Giao dịch trung gian',
         };
     }
 
@@ -66,11 +50,9 @@ enum PointTransactionType: string
     public function isIncreasing(): bool
     {
         return in_array($this, [
-            self::EARNED, 
-            self::EARN, 
-            self::REFERRAL_BONUS, 
-            self::RECEIVED, 
-            self::ADMIN_ADJUST
+            self::ABOUT_CUSTOMER,
+            self::STORE_TRANSACTIONS,
+            self::INTERMEDIATE_TRANSACTIONS,
         ]);
     }
 
@@ -84,10 +66,9 @@ enum PointTransactionType: string
     public function isDecreasing(): bool
     {
         return in_array($this, [
-            self::SENT, 
-            self::EXCHANGED, 
-            self::SPEND, 
-            self::TRANSFER
+           self::ABOUT_CUSTOMER,
+           self::STORE_TRANSACTIONS,
+           self::INTERMEDIATE_TRANSACTIONS,
         ]);
     }
 

@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('customer_points', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('customer_id');
-            $table->decimal('points', 15, 2)->default(0);
+            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
+            $table->integer('points')->default(0);
+            $table->integer('available_points')->default(0);
+            $table->integer('total_earned')->default(0);
+            $table->integer('total_spent')->default(0);
             $table->timestamps();
-
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
-            $table->unique('customer_id');
         });
     }
 

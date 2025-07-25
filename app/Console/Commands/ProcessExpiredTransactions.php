@@ -119,7 +119,7 @@ class ProcessExpiredTransactions extends Command
             // Tạo wallet transaction record cho buyer
             WalletTransaction::create([
                 'customer_id' => $buyer->id,
-                'type' => 'credit',
+                'type' => 'buy',
                 'transaction_type' => 'expired_refund',
                 'amount' => $refundAmount,
                 'description' => "Hoàn tiền giao dịch hết hạn #{$transaction->id} (phí {$transaction->fee} VNĐ bị mất)",

@@ -13,7 +13,10 @@ class PurchaseController extends BaseCustomerController
      */
     public function index(Request $request)
     {
-        $transactions = StoreTransaction::where('buyer_id', $this->customer->id)
+        $transactions = StoreTransaction::where(function($query) {
+            $query->where('buyer_id', $this->customer->id)
+                  ->orWhere('seller_id', $this->customer->id);
+        })
             ->with(['buyer:id,username', 'seller:id,username', 'product:id,name,price,images'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -22,7 +25,6 @@ class PurchaseController extends BaseCustomerController
         $transactions->getCollection()->transform(function ($transaction) {
             return $this->transformTransactionForFrontend($transaction);
         });
-
         return Inertia::render('customer/Store/Transactions', [
             'transactions' => $transactions,
             'currentUser' => $this->customer,

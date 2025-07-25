@@ -71,22 +71,46 @@ class CompleteStoreTransactionTransition extends Transition
         // Store transaction: phí 1% được trừ từ người bán
         $feePercentage = \App\Models\SystemSetting::getValue('store_transaction_fee_percentage', 1);
         $sellerReceiveAmount = $this->transaction->amount * (100 - $feePercentage) / 100;
-        
+       
+        // Cập nhật số dư của seller
         $seller = $this->transaction->seller;
-        $seller->increment('wallet_balance', $sellerReceiveAmount);
-
-        // Create wallet transaction record for seller
-        WalletTransaction::create([
-            'customer_id' => $seller->id,
-            'type' => 'credit',
-            'transaction_type' => 'store_sale',
-            'amount' => $sellerReceiveAmount,
-            'description' => "Bán sản phẩm: {$this->transaction->product->name}",
-            'reference_id' => $this->transaction->id,
-            'status' => 'completed',
+        $seller->balance->increment('balance', $sellerReceiveAmount);
+        
+        // Giảm locked_balance của buyer
+        $buyer = $this->transaction->buyer;
+        if ($buyer->balance->locked_balance) {
+            $buyer->balance->decrement('locked_balance', $this->transaction->amount);
+        }
+        collect([
+            [
+                'customer_id' => $seller->id,
+                'type' => 'sell',
+                'transaction_type' => 'store_sale',
+                'amount' =>  $this->transaction->amount,
+                'fee' =>   $this->transaction->amount - $sellerReceiveAmount,
+                'description' => "Bán sản phẩm: {$this->transaction->product->name}",
+                'reference_id' => $this->transaction->id,
+                'status' => 'completed',
+            ],
+           [
+                'customer_id' => $buyer->id,
+                'type' => 'buy',
+                'transaction_type' => 'store_purchase',
+                'amount' =>  $this->transaction->amount,
+                'fee' =>   0,
+                'description' => "Mua sản phẩm: {$this->transaction->product->name}",
+                'reference_id' => $this->transaction->id,
+                'status' => 'completed',
+            ],
+        ])->each(function ($data) {
+            WalletTransaction::create($data);
+        });
+        Log::info('Transferred {} fee {} to seller {} for store transaction {}', [
+            $this->transaction->amount,
+            $this->transaction->amount - $sellerReceiveAmount,
+            $seller->id,
+            $this->transaction->id,
         ]);
-
-        Log::info("Transferred {$sellerReceiveAmount} to seller {$seller->id} for store transaction {$this->transaction->id}");
     }
 
     /**

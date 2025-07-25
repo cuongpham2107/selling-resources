@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import { formatDate } from '@/lib/date';
 import type { PersonalStore } from '@/types';
+import { getStatusBadge } from '@/lib/config';
 
 interface AnalyticsData {
     total_products: number;
@@ -35,18 +36,7 @@ export default function Analytics({ store, analytics }: AnalyticsPageProps) {
         }).format(amount);
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return <Badge variant="default">Hoàn thành</Badge>;
-            case 'pending':
-                return <Badge variant="secondary">Chờ xử lý</Badge>;
-            case 'cancelled':
-                return <Badge variant="destructive">Đã hủy</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
+  
 
     return (
         <CustomerLayout>

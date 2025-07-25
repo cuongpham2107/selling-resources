@@ -89,7 +89,6 @@ class StoreProductForm
                 Toggle::make('is_sold')
                     ->inline(false)
                     ->label('Đã bán')
-                    ->disabled()
                     ->columnSpan(1),
 
 
